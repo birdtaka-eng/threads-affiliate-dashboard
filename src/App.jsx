@@ -1,5 +1,241 @@
-import React, { useState } from 'react';
-import { ChevronRight, ChevronDown, Check, Lock, Play, Settings, User, Search, FileText, Calendar, BarChart3, Zap, Shield, AlertTriangle, Sparkles, Target, TrendingUp, Box, Clock, LineChart, ExternalLink, AlertCircle, XCircle, SkipForward } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ChevronRight, ChevronDown, Check, Lock, Play, Settings, User, Search, FileText, Calendar, BarChart3, Zap, Shield, AlertTriangle, Sparkles, Target, TrendingUp, Box, Clock, LineChart, ExternalLink, AlertCircle, XCircle, SkipForward, RotateCcw, Trash2, Plus, Edit3, Save, Key } from 'lucide-react';
+
+// 各ステップのフォーム設定
+const stepFormConfigs = {
+  '0-1': {
+    type: 'checklist',
+    fields: [
+      { id: 'hasAccount', label: '楽天会員アカウントを持っている', type: 'checkbox' },
+      { id: 'registered', label: '楽天アフィリエイトに登録完了', type: 'checkbox' },
+      { id: 'affiliateId', label: 'アフィリエイトID', type: 'text', placeholder: '例: 12345678' },
+    ],
+    completionCheck: (data) => data?.registered && data?.affiliateId,
+  },
+  '0-2': {
+    type: 'checklist',
+    fields: [
+      { id: 'hasInstagram', label: 'Instagramアカウントを持っている', type: 'checkbox' },
+      { id: 'threadsCreated', label: 'Threadsアカウント作成完了', type: 'checkbox' },
+      { id: 'threadsUsername', label: 'Threadsユーザー名', type: 'text', placeholder: '@username' },
+    ],
+    warnings: [
+      { condition: (data, mode) => mode === 'beginner', message: 'PC初回ログインでアカウント停止のリスクあり。まずスマホで数投稿してから！', type: 'warning' },
+    ],
+    completionCheck: (data) => data?.threadsCreated && data?.threadsUsername,
+  },
+  '0-3': {
+    type: 'checklist',
+    fields: [
+      { id: 'urlCopied', label: 'ThreadsプロフィールURLをコピーした', type: 'checkbox' },
+      { id: 'siteRegistered', label: '楽天にサイト登録申請した', type: 'checkbox' },
+      { id: 'approved', label: '審査完了（承認済み）', type: 'checkbox' },
+    ],
+    completionCheck: (data) => data?.approved,
+  },
+  '1-1': {
+    type: 'selection',
+    fields: [
+      {
+        id: 'selectedGenre',
+        label: 'ジャンルを選択',
+        type: 'select',
+        options: [
+          { value: 'interior', label: 'インテリア・雑貨', difficulty: '初心者向け', warning: null },
+          { value: 'fashion', label: 'ファッション', difficulty: '初心者向け', warning: null },
+          { value: 'gadget', label: 'ガジェット', difficulty: '初心者向け', warning: null },
+          { value: 'cosme', label: 'コスメ・美容', difficulty: '中級者向け', warning: '言葉での説得力が必要です' },
+          { value: 'supplement', label: 'サプリ・健康', difficulty: '上級者向け', warning: '言葉での説得が必須。初心者には難しいジャンルです' },
+          { value: 'other', label: 'その他', difficulty: '-', warning: null },
+        ],
+      },
+      { id: 'customGenre', label: 'その他の場合、具体的に', type: 'text', placeholder: '具体的なジャンル名', showIf: (data) => data?.selectedGenre === 'other' },
+      { id: 'genreReason', label: 'このジャンルを選んだ理由', type: 'textarea', placeholder: '例: 自分も好きで詳しいから' },
+    ],
+    completionCheck: (data) => data?.selectedGenre && (data?.selectedGenre !== 'other' || data?.customGenre),
+  },
+  '1-2': {
+    type: 'form',
+    fields: [
+      { id: 'targetAge', label: 'ターゲット年齢層', type: 'select', options: [
+        { value: '10-20', label: '10-20代' },
+        { value: '20-30', label: '20-30代' },
+        { value: '30-40', label: '30-40代' },
+        { value: '40-50', label: '40-50代' },
+        { value: '50+', label: '50代以上' },
+        { value: 'all', label: '全年齢' },
+      ]},
+      { id: 'targetGender', label: 'ターゲット性別', type: 'select', options: [
+        { value: 'female', label: '女性' },
+        { value: 'male', label: '男性' },
+        { value: 'all', label: '両方' },
+      ]},
+      { id: 'accountCharacter', label: 'アカウントのキャラ設定', type: 'textarea', placeholder: '例: 同世代の雑貨好き女子として、おしゃれアイテムを紹介' },
+      { id: 'oneLiner', label: '一言コンセプト', type: 'text', placeholder: '〇〇な人に△△を届けるアカウント' },
+    ],
+    completionCheck: (data) => data?.targetAge && data?.targetGender && data?.oneLiner,
+  },
+  '1-3': {
+    type: 'form',
+    fields: [
+      { id: 'accountName', label: 'アカウント名', type: 'text', placeholder: '例: みゆ｜暮らしの雑貨' },
+      { id: 'profileTitle', label: '肩書き（1行）', type: 'text', placeholder: '例: 30代｜インテリア好き' },
+      { id: 'profileValue', label: '提供価値', type: 'text', placeholder: '例: 毎日おしゃれアイテム紹介' },
+      { id: 'profileCTA', label: 'CTA（行動喚起）', type: 'text', placeholder: '例: フォローで見逃し防止' },
+      { id: 'fullProfile', label: 'プロフィール全文（プレビュー用）', type: 'textarea', placeholder: '上記を組み合わせた完成形' },
+    ],
+    warnings: [
+      { condition: (data) => data?.fullProfile?.includes('元美容部員'), message: '「元美容部員」等の虚偽の肩書きは禁止です', type: 'error' },
+    ],
+    completionCheck: (data) => data?.accountName && data?.fullProfile,
+  },
+  '1-4': {
+    type: 'checklist',
+    fields: [
+      { id: 'iconStyle', label: 'アイコンスタイル', type: 'select', options: [
+        { value: 'face', label: '顔出し' },
+        { value: 'illustration', label: 'イラスト' },
+        { value: 'product', label: '商品・アイテム画像' },
+        { value: 'logo', label: 'ロゴ・文字' },
+      ]},
+      { id: 'iconCreated', label: 'アイコン画像を作成した', type: 'checkbox' },
+      { id: 'iconSet', label: 'Threadsにアイコンを設定した', type: 'checkbox' },
+    ],
+    completionCheck: (data) => data?.iconSet,
+  },
+  '2-1': {
+    type: 'counter',
+    fields: [
+      { id: 'largeAccountsCount', label: 'フォローした大手アカウント数', type: 'number', min: 0, max: 20, target: 5 },
+      { id: 'largeAccountsList', label: 'フォローしたアカウント（メモ）', type: 'textarea', placeholder: '@account1\n@account2\n...' },
+    ],
+    completionCheck: (data) => data?.largeAccountsCount >= 5,
+  },
+  '2-2': {
+    type: 'counter',
+    fields: [
+      { id: 'midAccountsCount', label: 'フォローした中規模アカウント数', type: 'number', min: 0, max: 20, target: 5 },
+      { id: 'midAccountsList', label: 'フォローしたアカウント（メモ）', type: 'textarea', placeholder: '@account1\n@account2\n...' },
+    ],
+    completionCheck: (data) => data?.midAccountsCount >= 5,
+  },
+  '2-3': {
+    type: 'counter',
+    fields: [
+      { id: 'buzzPostsCount', label: 'ストックしたバズ投稿数', type: 'number', min: 0, max: 50, target: 10 },
+      { id: 'buzzPostsNotes', label: 'バズ投稿の分析メモ', type: 'textarea', placeholder: '・〇〇の投稿: フック文が良かった\n・△△の投稿: 画像が映えてた' },
+    ],
+    completionCheck: (data) => data?.buzzPostsCount >= 10,
+  },
+  '2-4': {
+    type: 'counter',
+    fields: [
+      { id: 'productCount', label: 'リストアップした商品数', type: 'number', min: 0, max: 50, target: 10 },
+      { id: 'productList', label: '商品リスト', type: 'textarea', placeholder: '1. 商品名 - 楽天URL\n2. 商品名 - 楽天URL\n...' },
+    ],
+    completionCheck: (data) => data?.productCount >= 10,
+  },
+  '3-1': {
+    type: 'form',
+    fields: [
+      { id: 'greetingTemplate', label: '使用するテンプレート', type: 'select', options: [
+        { value: 'gather', label: '「〇〇な人、集まれ！」' },
+        { value: 'followOnly', label: '「〇〇好きだけフォローして」' },
+        { value: 'introduction', label: '「はじめまして！〇〇歳の〇〇です」' },
+        { value: 'passion', label: '「〇〇が好きすぎて発信始めました」' },
+        { value: 'custom', label: 'オリジナル' },
+      ]},
+      { id: 'greetingPost', label: '挨拶投稿の本文', type: 'textarea', placeholder: '投稿本文を入力...', rows: 6 },
+      { id: 'greetingReady', label: '投稿準備完了', type: 'checkbox' },
+    ],
+    completionCheck: (data) => data?.greetingPost && data?.greetingReady,
+  },
+  '3-2': {
+    type: 'counter',
+    fields: [
+      { id: 'draftPostsCount', label: '準備した投稿数', type: 'number', min: 0, max: 20, target: 5 },
+      { id: 'draftPostsList', label: '準備した投稿メモ', type: 'textarea', placeholder: '1. 〇〇商品の紹介\n2. △△商品の紹介\n...' },
+    ],
+    completionCheck: (data) => data?.draftPostsCount >= 5,
+  },
+  '3-3': {
+    type: 'form',
+    fields: [
+      { id: 'postsPerDay', label: '1日の投稿数', type: 'select', options: [
+        { value: '1-2', label: '1-2投稿' },
+        { value: '3-4', label: '3-4投稿' },
+        { value: '5+', label: '5投稿以上（推奨）' },
+      ]},
+      { id: 'mainPostTime', label: 'メインの投稿時間', type: 'select', options: [
+        { value: 'morning', label: '7:00-8:00（朝）' },
+        { value: 'lunch', label: '12:00-13:00（昼）' },
+        { value: 'evening', label: '20:00-21:00（夜・推奨）' },
+      ]},
+      { id: 'scheduleNotes', label: 'スケジュールメモ', type: 'textarea', placeholder: '月: アフィ投稿\n火: 有益投稿\n...' },
+    ],
+    completionCheck: (data) => data?.postsPerDay && data?.mainPostTime,
+  },
+  '4-1': {
+    type: 'checklist',
+    fields: [
+      { id: 'day1Posted', label: '挨拶投稿を実行した', type: 'checkbox' },
+      { id: 'day1Engagement', label: '投稿後、同ジャンルにいいね回りをした', type: 'checkbox' },
+      { id: 'day1Result', label: '3時間後の反応', type: 'text', placeholder: '例: いいね50、コメント5' },
+    ],
+    completionCheck: (data) => data?.day1Posted,
+  },
+  '4-2': {
+    type: 'checklist',
+    fields: [
+      { id: 'day2AffPosted', label: 'アフィリエイト投稿を開始した', type: 'checkbox' },
+      { id: 'day2PRmarked', label: 'PR表記をつけている', type: 'checkbox' },
+      { id: 'day2LinkInComment', label: 'リンクはコメント欄に貼っている', type: 'checkbox' },
+      { id: 'day2Notes', label: '反応メモ', type: 'textarea', placeholder: '投稿ごとの反応を記録' },
+    ],
+    warnings: [
+      { condition: (data, mode) => mode === 'beginner' && !data?.day2PRmarked, message: 'PR表記は必須です！忘れると規約違反になります', type: 'error' },
+    ],
+    completionCheck: (data) => data?.day2AffPosted && data?.day2PRmarked,
+  },
+  '4-3': {
+    type: 'form',
+    fields: [
+      { id: 'rotationStarted', label: '3種類の投稿ローテーションを開始した', type: 'checkbox' },
+      { id: 'weeklyPlan', label: '週間投稿計画', type: 'textarea', placeholder: '月: 収益投稿\n火: フォロワー増加投稿\n水: ファン化投稿\n...', rows: 7 },
+    ],
+    completionCheck: (data) => data?.rotationStarted,
+  },
+  '5-1': {
+    type: 'checklist',
+    fields: [
+      { id: 'roomCreated', label: '楽天ROOMアカウント作成済み', type: 'checkbox' },
+      { id: 'roomLinked', label: 'プロフィールにROOMリンク追加済み', type: 'checkbox' },
+      { id: 'roomUrl', label: '楽天ROOM URL', type: 'text', placeholder: 'https://room.rakuten.co.jp/...' },
+    ],
+    completionCheck: (data) => data?.roomLinked,
+  },
+  '5-2': {
+    type: 'form',
+    fields: [
+      { id: 'analysisStarted', label: '投稿分析を開始した', type: 'checkbox' },
+      { id: 'bestPost', label: '最もバズった投稿', type: 'textarea', placeholder: 'どの投稿がなぜバズったか' },
+      { id: 'improvements', label: '改善点（3つ）', type: 'textarea', placeholder: '1. 〇〇を改善\n2. △△を試す\n3. □□を強化' },
+    ],
+    completionCheck: (data) => data?.analysisStarted,
+  },
+  '5-3': {
+    type: 'checklist',
+    fields: [
+      { id: 'ready', label: '1つ目のアカウントが軌道に乗った', type: 'checkbox' },
+      { id: 'secondGenre', label: '2つ目のジャンル', type: 'text', placeholder: '例: ファッション' },
+      { id: 'secondAccount', label: '2つ目のアカウント作成済み', type: 'checkbox' },
+    ],
+    warnings: [
+      { condition: (data, mode) => mode === 'beginner' && !data?.ready, message: '1つ目が軌道に乗るまでは焦らないで！', type: 'warning' },
+    ],
+    completionCheck: (data) => data?.ready && data?.secondAccount,
+  },
+};
 
 // フェーズとステップのデータ構造
 const initialPhases = [
@@ -471,14 +707,115 @@ const stepDetails = {
   },
 };
 
+// localStorageキー
+const STORAGE_KEYS = {
+  USER_DATA: 'threads-affiliate-userData',
+  PHASES: 'threads-affiliate-phases',
+  ACCOUNTS: 'threads-affiliate-accounts',
+  MODE: 'threads-affiliate-mode',
+};
+
 export default function Dashboard() {
-  const [phases, setPhases] = useState(initialPhases);
+  const [phases, setPhases] = useState(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.PHASES);
+    return saved ? JSON.parse(saved) : initialPhases;
+  });
   const [expandedPhase, setExpandedPhase] = useState(0);
   const [selectedStep, setSelectedStep] = useState(null);
-  const [mode, setMode] = useState('beginner'); // 'beginner' or 'expert'
+  const [mode, setMode] = useState(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.MODE);
+    return saved || 'beginner';
+  });
   const [showPatterns, setShowPatterns] = useState(false);
   const [showModules, setShowModules] = useState(false);
   const [showSafetyInfo, setShowSafetyInfo] = useState(false);
+  const [activeTab, setActiveTab] = useState('tasks'); // 'tasks' or 'accounts'
+
+  // ユーザー入力データ
+  const [userData, setUserData] = useState(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.USER_DATA);
+    return saved ? JSON.parse(saved) : {};
+  });
+
+  // アカウント情報
+  const [accounts, setAccounts] = useState(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.ACCOUNTS);
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [editingAccount, setEditingAccount] = useState(null);
+  const [newAccount, setNewAccount] = useState({ service: '', userId: '', password: '', memo: '' });
+
+  // localStorageに自動保存
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(userData));
+  }, [userData]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.PHASES, JSON.stringify(phases));
+  }, [phases]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.ACCOUNTS, JSON.stringify(accounts));
+  }, [accounts]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.MODE, mode);
+  }, [mode]);
+
+  // ユーザーデータを更新
+  const updateUserData = (stepId, fieldId, value) => {
+    setUserData(prev => ({
+      ...prev,
+      [stepId]: {
+        ...prev[stepId],
+        [fieldId]: value,
+      }
+    }));
+  };
+
+  // ステップのデータをリセット（やり直す）
+  const resetStepData = (stepId) => {
+    setUserData(prev => {
+      const newData = { ...prev };
+      delete newData[stepId];
+      return newData;
+    });
+    updateStepStatus(stepId, 'pending');
+  };
+
+  // 全設定をリセット
+  const resetAllSettings = () => {
+    if (window.confirm('全ての設定をリセットしますか？入力内容が全て削除されます。')) {
+      localStorage.removeItem(STORAGE_KEYS.USER_DATA);
+      localStorage.removeItem(STORAGE_KEYS.PHASES);
+      localStorage.removeItem(STORAGE_KEYS.ACCOUNTS);
+      localStorage.removeItem(STORAGE_KEYS.MODE);
+      setUserData({});
+      setPhases(initialPhases);
+      setAccounts([]);
+      setMode('beginner');
+      setSelectedStep(null);
+    }
+  };
+
+  // アカウント追加
+  const addAccount = () => {
+    if (!newAccount.service) return;
+    setAccounts(prev => [...prev, { ...newAccount, id: Date.now() }]);
+    setNewAccount({ service: '', userId: '', password: '', memo: '' });
+  };
+
+  // アカウント更新
+  const updateAccount = (id, updates) => {
+    setAccounts(prev => prev.map(acc => acc.id === id ? { ...acc, ...updates } : acc));
+  };
+
+  // アカウント削除
+  const deleteAccount = (id) => {
+    if (window.confirm('このアカウント情報を削除しますか？')) {
+      setAccounts(prev => prev.filter(acc => acc.id !== id));
+    }
+  };
 
   // ステップの状態を更新
   const updateStepStatus = (stepId, newStatus) => {
@@ -537,6 +874,191 @@ export default function Dashboard() {
     }
   };
 
+  // フォームフィールドレンダリング
+  const FormField = ({ field, stepId, data }) => {
+    const value = data?.[field.id] ?? '';
+
+    // showIfの条件をチェック
+    if (field.showIf && !field.showIf(data)) {
+      return null;
+    }
+
+    switch (field.type) {
+      case 'checkbox':
+        return (
+          <label className="flex items-center gap-3 p-3 bg-gray-700/50 rounded-lg cursor-pointer hover:bg-gray-700 transition-all">
+            <input
+              type="checkbox"
+              checked={!!value}
+              onChange={(e) => updateUserData(stepId, field.id, e.target.checked)}
+              className="w-5 h-5 rounded border-gray-500 text-blue-500 focus:ring-blue-500 focus:ring-offset-gray-800"
+            />
+            <span className={value ? 'text-green-400' : 'text-gray-300'}>{field.label}</span>
+            {value && <Check className="w-4 h-4 text-green-500 ml-auto" />}
+          </label>
+        );
+
+      case 'text':
+        return (
+          <div className="space-y-1">
+            <label className="text-sm text-gray-400">{field.label}</label>
+            <input
+              type="text"
+              value={value}
+              onChange={(e) => updateUserData(stepId, field.id, e.target.value)}
+              placeholder={field.placeholder}
+              className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+            />
+          </div>
+        );
+
+      case 'textarea':
+        return (
+          <div className="space-y-1">
+            <label className="text-sm text-gray-400">{field.label}</label>
+            <textarea
+              value={value}
+              onChange={(e) => updateUserData(stepId, field.id, e.target.value)}
+              placeholder={field.placeholder}
+              rows={field.rows || 3}
+              className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 resize-none"
+            />
+          </div>
+        );
+
+      case 'select':
+        return (
+          <div className="space-y-1">
+            <label className="text-sm text-gray-400">{field.label}</label>
+            <select
+              value={value}
+              onChange={(e) => updateUserData(stepId, field.id, e.target.value)}
+              className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+            >
+              <option value="">選択してください</option>
+              {field.options.map(opt => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}{opt.difficulty ? ` (${opt.difficulty})` : ''}
+                </option>
+              ))}
+            </select>
+            {/* 選択肢に警告がある場合 */}
+            {mode === 'beginner' && value && field.options.find(o => o.value === value)?.warning && (
+              <div className="mt-2 p-3 bg-yellow-900/30 border border-yellow-500/50 rounded-lg flex items-start gap-2">
+                <AlertTriangle className="w-5 h-5 text-yellow-500 flex-shrink-0 mt-0.5" />
+                <span className="text-yellow-400 text-sm">{field.options.find(o => o.value === value).warning}</span>
+              </div>
+            )}
+          </div>
+        );
+
+      case 'number':
+        const progress = field.target ? Math.min((value || 0) / field.target * 100, 100) : 0;
+        return (
+          <div className="space-y-2">
+            <label className="text-sm text-gray-400">{field.label}</label>
+            <div className="flex items-center gap-3">
+              <input
+                type="number"
+                value={value}
+                onChange={(e) => updateUserData(stepId, field.id, parseInt(e.target.value) || 0)}
+                min={field.min}
+                max={field.max}
+                className="w-24 bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+              />
+              {field.target && (
+                <div className="flex-1">
+                  <div className="flex justify-between text-xs text-gray-400 mb-1">
+                    <span>{value || 0} / {field.target}</span>
+                    <span>{Math.round(progress)}%</span>
+                  </div>
+                  <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full transition-all ${progress >= 100 ? 'bg-green-500' : 'bg-blue-500'}`}
+                      style={{ width: `${progress}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+
+      default:
+        return null;
+    }
+  };
+
+  // ステップフォームのレンダリング
+  const StepForm = ({ stepId }) => {
+    const config = stepFormConfigs[stepId];
+    const data = userData[stepId] || {};
+
+    if (!config) return null;
+
+    // 警告をチェック
+    const activeWarnings = config.warnings?.filter(w => w.condition(data, mode)) || [];
+
+    return (
+      <div className="space-y-4 mt-6">
+        <div className="border-t border-gray-700 pt-4">
+          <h4 className="text-sm font-medium text-gray-400 mb-3 flex items-center gap-2">
+            <Edit3 className="w-4 h-4" />
+            入力項目
+          </h4>
+
+          {/* 警告表示 */}
+          {activeWarnings.map((warning, idx) => (
+            <div
+              key={idx}
+              className={`mb-4 p-3 rounded-lg flex items-start gap-2 ${
+                warning.type === 'error'
+                  ? 'bg-red-900/30 border border-red-500/50'
+                  : 'bg-yellow-900/30 border border-yellow-500/50'
+              }`}
+            >
+              <AlertTriangle className={`w-5 h-5 flex-shrink-0 mt-0.5 ${
+                warning.type === 'error' ? 'text-red-500' : 'text-yellow-500'
+              }`} />
+              <span className={`text-sm ${warning.type === 'error' ? 'text-red-400' : 'text-yellow-400'}`}>
+                {warning.message}
+              </span>
+            </div>
+          ))}
+
+          <div className="space-y-3">
+            {config.fields.map(field => (
+              <FormField key={field.id} field={field} stepId={stepId} data={data} />
+            ))}
+          </div>
+
+          {/* 完了チェック表示 */}
+          {config.completionCheck && (
+            <div className={`mt-4 p-3 rounded-lg ${
+              config.completionCheck(data)
+                ? 'bg-green-900/30 border border-green-500/50'
+                : 'bg-gray-700/50 border border-gray-600'
+            }`}>
+              <div className="flex items-center gap-2">
+                {config.completionCheck(data) ? (
+                  <>
+                    <Check className="w-5 h-5 text-green-500" />
+                    <span className="text-green-400">入力完了！</span>
+                  </>
+                ) : (
+                  <>
+                    <div className="w-5 h-5 rounded-full border-2 border-gray-500" />
+                    <span className="text-gray-400">必要な項目を入力してください</span>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-gray-900 text-white">
       {/* ヘッダー */}
@@ -572,7 +1094,42 @@ export default function Dashboard() {
                 エキスパート
               </button>
             </div>
+
+            {/* 設定リセットボタン */}
+            <button
+              onClick={resetAllSettings}
+              className="px-3 py-1.5 rounded-lg text-sm flex items-center gap-1.5 bg-red-900/30 text-red-400 hover:bg-red-900/50 border border-red-500/30 transition-all"
+            >
+              <RotateCcw className="w-4 h-4" />
+              設定をリセット
+            </button>
           </div>
+        </div>
+
+        {/* タブ切り替え */}
+        <div className="flex gap-2 mt-4">
+          <button
+            onClick={() => setActiveTab('tasks')}
+            className={`px-4 py-2 rounded-lg text-sm flex items-center gap-2 transition-all ${
+              activeTab === 'tasks'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-700 text-gray-400 hover:text-white'
+            }`}
+          >
+            <FileText className="w-4 h-4" />
+            やることリスト
+          </button>
+          <button
+            onClick={() => setActiveTab('accounts')}
+            className={`px-4 py-2 rounded-lg text-sm flex items-center gap-2 transition-all ${
+              activeTab === 'accounts'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-700 text-gray-400 hover:text-white'
+            }`}
+          >
+            <Key className="w-4 h-4" />
+            アカウント情報
+          </button>
         </div>
         
         {/* プログレスバー */}
@@ -590,6 +1147,8 @@ export default function Dashboard() {
         </div>
       </header>
 
+      {/* やることリストタブ */}
+      {activeTab === 'tasks' && (
       <div className="flex">
         {/* サイドバー - フェーズ一覧 */}
         <aside className="w-72 bg-gray-800 min-h-screen border-r border-gray-700 p-4">
@@ -963,6 +1522,9 @@ export default function Dashboard() {
                 </div>
               )}
 
+              {/* インタラクティブフォーム */}
+              <StepForm stepId={selectedStep.id} />
+
               {/* アクションボタン */}
               {selectedStep.status === 'pending' && (
                 <div className="mt-6 flex gap-3">
@@ -984,16 +1546,34 @@ export default function Dashboard() {
                 )}
 
               {selectedStep.status === 'completed' && (
-                <div className="mt-6 flex items-center gap-2 text-green-400">
-                  <Check className="w-5 h-5" />
-                  <span>このステップは完了しています</span>
+                <div className="mt-6 flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-green-400">
+                    <Check className="w-5 h-5" />
+                    <span>このステップは完了しています</span>
+                  </div>
+                  <button
+                    onClick={() => resetStepData(selectedStep.id)}
+                    className="px-3 py-1.5 rounded-lg text-sm flex items-center gap-1.5 bg-gray-700 text-gray-300 hover:bg-gray-600 transition-all"
+                  >
+                    <RotateCcw className="w-4 h-4" />
+                    やり直す
+                  </button>
                 </div>
               )}
 
               {selectedStep.status === 'skipped' && (
-                <div className="mt-6 flex items-center gap-2 text-yellow-400">
-                  <SkipForward className="w-5 h-5" />
-                  <span>このステップはスキップしました</span>
+                <div className="mt-6 flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-yellow-400">
+                    <SkipForward className="w-5 h-5" />
+                    <span>このステップはスキップしました</span>
+                  </div>
+                  <button
+                    onClick={() => resetStepData(selectedStep.id)}
+                    className="px-3 py-1.5 rounded-lg text-sm flex items-center gap-1.5 bg-gray-700 text-gray-300 hover:bg-gray-600 transition-all"
+                  >
+                    <RotateCcw className="w-4 h-4" />
+                    やり直す
+                  </button>
                 </div>
               )}
             </div>
@@ -1042,6 +1622,179 @@ export default function Dashboard() {
           )}
         </main>
       </div>
+      )}
+
+      {/* アカウント情報タブ */}
+      {activeTab === 'accounts' && (
+        <div className="p-6">
+          <div className="max-w-4xl mx-auto">
+            <h2 className="text-2xl font-bold mb-6 flex items-center gap-3">
+              <Key className="w-6 h-6 text-blue-400" />
+              アカウント情報管理
+            </h2>
+            <p className="text-gray-400 mb-6">
+              楽天、Threads、Instagramなどのアカウント情報を一元管理できます。
+              <span className="text-yellow-400 text-sm ml-2">※データはブラウザに保存されます</span>
+            </p>
+
+            {/* 新規追加フォーム */}
+            <div className="bg-gray-800 rounded-xl p-6 border border-gray-700 mb-6">
+              <h3 className="font-semibold mb-4 flex items-center gap-2">
+                <Plus className="w-4 h-4" />
+                新規アカウント追加
+              </h3>
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm text-gray-400 block mb-1">サービス名</label>
+                  <input
+                    type="text"
+                    value={newAccount.service}
+                    onChange={(e) => setNewAccount({ ...newAccount, service: e.target.value })}
+                    placeholder="例: 楽天アフィリエイト"
+                    className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white placeholder-gray-500"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm text-gray-400 block mb-1">ID / メールアドレス</label>
+                  <input
+                    type="text"
+                    value={newAccount.userId}
+                    onChange={(e) => setNewAccount({ ...newAccount, userId: e.target.value })}
+                    placeholder="例: user@example.com"
+                    className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white placeholder-gray-500"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm text-gray-400 block mb-1">パスワード</label>
+                  <input
+                    type="text"
+                    value={newAccount.password}
+                    onChange={(e) => setNewAccount({ ...newAccount, password: e.target.value })}
+                    placeholder="パスワード"
+                    className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white placeholder-gray-500"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm text-gray-400 block mb-1">メモ</label>
+                  <input
+                    type="text"
+                    value={newAccount.memo}
+                    onChange={(e) => setNewAccount({ ...newAccount, memo: e.target.value })}
+                    placeholder="備考"
+                    className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white placeholder-gray-500"
+                  />
+                </div>
+              </div>
+              <button
+                onClick={addAccount}
+                disabled={!newAccount.service}
+                className="mt-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed px-4 py-2 rounded-lg flex items-center gap-2 transition-all"
+              >
+                <Plus className="w-4 h-4" />
+                追加する
+              </button>
+            </div>
+
+            {/* アカウント一覧 */}
+            <div className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
+              <div className="p-4 border-b border-gray-700">
+                <h3 className="font-semibold">登録済みアカウント ({accounts.length}件)</h3>
+              </div>
+
+              {accounts.length === 0 ? (
+                <div className="p-8 text-center text-gray-500">
+                  アカウント情報がありません。上のフォームから追加してください。
+                </div>
+              ) : (
+                <div className="divide-y divide-gray-700">
+                  {accounts.map((account) => (
+                    <div key={account.id} className="p-4 hover:bg-gray-750 transition-all">
+                      {editingAccount === account.id ? (
+                        // 編集モード
+                        <div className="space-y-3">
+                          <div className="grid md:grid-cols-2 gap-3">
+                            <input
+                              type="text"
+                              value={account.service}
+                              onChange={(e) => updateAccount(account.id, { service: e.target.value })}
+                              className="bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white"
+                              placeholder="サービス名"
+                            />
+                            <input
+                              type="text"
+                              value={account.userId}
+                              onChange={(e) => updateAccount(account.id, { userId: e.target.value })}
+                              className="bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white"
+                              placeholder="ID"
+                            />
+                            <input
+                              type="text"
+                              value={account.password}
+                              onChange={(e) => updateAccount(account.id, { password: e.target.value })}
+                              className="bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white"
+                              placeholder="パスワード"
+                            />
+                            <input
+                              type="text"
+                              value={account.memo}
+                              onChange={(e) => updateAccount(account.id, { memo: e.target.value })}
+                              className="bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white"
+                              placeholder="メモ"
+                            />
+                          </div>
+                          <button
+                            onClick={() => setEditingAccount(null)}
+                            className="bg-green-600 hover:bg-green-700 px-3 py-1.5 rounded-lg text-sm flex items-center gap-1.5 transition-all"
+                          >
+                            <Save className="w-4 h-4" />
+                            保存
+                          </button>
+                        </div>
+                      ) : (
+                        // 表示モード
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1 grid md:grid-cols-4 gap-4">
+                            <div>
+                              <div className="text-xs text-gray-500 mb-1">サービス</div>
+                              <div className="font-medium">{account.service}</div>
+                            </div>
+                            <div>
+                              <div className="text-xs text-gray-500 mb-1">ID</div>
+                              <div className="text-gray-300">{account.userId || '-'}</div>
+                            </div>
+                            <div>
+                              <div className="text-xs text-gray-500 mb-1">パスワード</div>
+                              <div className="text-gray-300 font-mono">{account.password || '-'}</div>
+                            </div>
+                            <div>
+                              <div className="text-xs text-gray-500 mb-1">メモ</div>
+                              <div className="text-gray-400 text-sm">{account.memo || '-'}</div>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 ml-4">
+                            <button
+                              onClick={() => setEditingAccount(account.id)}
+                              className="p-2 rounded-lg hover:bg-gray-700 text-gray-400 hover:text-white transition-all"
+                            >
+                              <Edit3 className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => deleteAccount(account.id)}
+                              className="p-2 rounded-lg hover:bg-red-900/50 text-gray-400 hover:text-red-400 transition-all"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
