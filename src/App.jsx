@@ -144,7 +144,7 @@ export default function Dashboard() {
           <div className="flex items-center gap-3">
             <Sparkles className="w-8 h-8 text-yellow-400" />
             <div>
-              <h1 className="text-xl font-bold">Threads × 楽天アフィリ（テスト）</h1>
+              <h1 className="text-xl font-bold">Threads × 楽天アフィリ</h1>
               <p className="text-sm text-gray-400">自動化システム</p>
             </div>
           </div>
