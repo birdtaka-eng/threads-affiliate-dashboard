@@ -730,6 +730,7 @@ export default function Dashboard() {
   const [showModules, setShowModules] = useState(false);
   const [showSafetyInfo, setShowSafetyInfo] = useState(false);
   const [activeTab, setActiveTab] = useState('tasks'); // 'tasks' or 'accounts'
+  const [expandedStepId, setExpandedStepId] = useState(null); // 展開中のステップID
 
   // ユーザー入力データ
   const [userData, setUserData] = useState(() => {
@@ -831,12 +832,14 @@ export default function Dashboard() {
   const completeStep = (stepId) => {
     updateStepStatus(stepId, 'completed');
     unlockNextStep(stepId);
+    setExpandedStepId(null); // パネルを閉じる
   };
 
   // ステップをスキップする
   const skipStep = (stepId) => {
     updateStepStatus(stepId, 'skipped');
     unlockNextStep(stepId);
+    setExpandedStepId(null); // パネルを閉じる
   };
 
   // 次のステップをアンロック
@@ -1151,7 +1154,7 @@ export default function Dashboard() {
       {activeTab === 'tasks' && (
       <div className="flex">
         {/* サイドバー - フェーズ一覧 */}
-        <aside className="w-72 bg-gray-800 min-h-screen border-r border-gray-700 p-4">
+        <aside className="w-96 bg-gray-800 min-h-screen max-h-screen overflow-y-auto border-r border-gray-700 p-4">
           <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">
             フェーズ
           </h2>
@@ -1190,37 +1193,136 @@ export default function Dashboard() {
                   {/* ステップ一覧 */}
                   {isExpanded && (
                     <div className="bg-gray-750 py-2">
-                      {phase.steps.map((step) => (
-                        <button
-                          key={step.id}
-                          onClick={() => {
-                            if (step.status !== 'locked' || mode === 'expert') {
-                              setSelectedStep(step);
-                            }
-                          }}
-                          disabled={step.status === 'locked' && mode === 'beginner'}
-                          className={`w-full flex items-center gap-3 px-4 py-2 transition-all ${
-                            selectedStep?.id === step.id
-                              ? 'bg-blue-600/20 border-l-2 border-blue-500'
-                              : step.status === 'locked' && mode === 'beginner'
-                              ? 'opacity-50 cursor-not-allowed'
-                              : 'hover:bg-gray-700'
-                          }`}
-                        >
-                          <StatusIcon status={step.status} />
-                          <span className={`text-sm flex-1 text-left ${
-                            step.important ? 'text-yellow-400 font-medium' : ''
-                          }`}>
-                            {step.name}
-                            {step.important && ' ⭐'}
-                          </span>
-                          {step.hasAI && (
-                            <span className="text-xs bg-purple-600/30 text-purple-400 px-1.5 py-0.5 rounded">
-                              AI
-                            </span>
-                          )}
-                        </button>
-                      ))}
+                      {phase.steps.map((step) => {
+                        const isStepExpanded = expandedStepId === step.id;
+                        const stepData = userData[step.id] || {};
+                        const config = stepFormConfigs[step.id];
+                        const isCompleteReady = config?.completionCheck ? config.completionCheck(stepData) : false;
+
+                        return (
+                          <div key={step.id}>
+                            {/* ステップヘッダー */}
+                            <button
+                              onClick={() => {
+                                if (step.status !== 'locked' || mode === 'expert') {
+                                  setExpandedStepId(isStepExpanded ? null : step.id);
+                                  setSelectedStep(step);
+                                }
+                              }}
+                              disabled={step.status === 'locked' && mode === 'beginner'}
+                              className={`w-full flex items-center gap-3 px-4 py-2 transition-all ${
+                                isStepExpanded
+                                  ? 'bg-blue-600/20 border-l-2 border-blue-500'
+                                  : step.status === 'locked' && mode === 'beginner'
+                                  ? 'opacity-50 cursor-not-allowed'
+                                  : 'hover:bg-gray-700'
+                              }`}
+                            >
+                              <StatusIcon status={step.status} />
+                              <span className={`text-sm flex-1 text-left ${
+                                step.important ? 'text-yellow-400 font-medium' : ''
+                              }`}>
+                                {step.name}
+                                {step.important && ' ⭐'}
+                              </span>
+                              {step.hasAI && (
+                                <span className="text-xs bg-purple-600/30 text-purple-400 px-1.5 py-0.5 rounded">
+                                  AI
+                                </span>
+                              )}
+                              {isStepExpanded ? (
+                                <ChevronDown className="w-4 h-4 text-gray-400" />
+                              ) : (
+                                <ChevronRight className="w-4 h-4 text-gray-400" />
+                              )}
+                            </button>
+
+                            {/* 展開パネル */}
+                            {isStepExpanded && config && (
+                              <div className="bg-gray-800 border-l-2 border-blue-500 px-4 py-3 space-y-3">
+                                {/* 警告表示 */}
+                                {config.warnings?.filter(w => w.condition(stepData, mode)).map((warning, idx) => (
+                                  <div
+                                    key={idx}
+                                    className={`p-2 rounded-lg flex items-start gap-2 text-sm ${
+                                      warning.type === 'error'
+                                        ? 'bg-red-900/30 border border-red-500/50'
+                                        : 'bg-yellow-900/30 border border-yellow-500/50'
+                                    }`}
+                                  >
+                                    <AlertTriangle className={`w-4 h-4 flex-shrink-0 mt-0.5 ${
+                                      warning.type === 'error' ? 'text-red-500' : 'text-yellow-500'
+                                    }`} />
+                                    <span className={warning.type === 'error' ? 'text-red-400' : 'text-yellow-400'}>
+                                      {warning.message}
+                                    </span>
+                                  </div>
+                                ))}
+
+                                {/* フォームフィールド */}
+                                {config.fields.map(field => (
+                                  <FormField key={field.id} field={field} stepId={step.id} data={stepData} />
+                                ))}
+
+                                {/* 完了状態 & アクションボタン */}
+                                <div className="pt-2 border-t border-gray-700">
+                                  {step.status === 'pending' && (
+                                    <div className="flex items-center gap-2">
+                                      <button
+                                        onClick={() => completeStep(step.id)}
+                                        disabled={!isCompleteReady}
+                                        className={`flex-1 py-2 rounded-lg flex items-center justify-center gap-2 text-sm transition-all ${
+                                          isCompleteReady
+                                            ? 'bg-green-600 hover:bg-green-700 text-white'
+                                            : 'bg-gray-700 text-gray-500 cursor-not-allowed'
+                                        }`}
+                                      >
+                                        <Check className="w-4 h-4" />
+                                        完了
+                                      </button>
+                                      <button
+                                        onClick={() => skipStep(step.id)}
+                                        className="px-3 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-gray-300 text-sm flex items-center gap-1 transition-all"
+                                      >
+                                        <SkipForward className="w-4 h-4" />
+                                        スキップ
+                                      </button>
+                                    </div>
+                                  )}
+
+                                  {step.status === 'completed' && (
+                                    <div className="flex items-center justify-between">
+                                      <span className="text-green-400 text-sm flex items-center gap-1">
+                                        <Check className="w-4 h-4" /> 完了済み
+                                      </span>
+                                      <button
+                                        onClick={() => resetStepData(step.id)}
+                                        className="text-xs text-gray-400 hover:text-white flex items-center gap-1"
+                                      >
+                                        <RotateCcw className="w-3 h-3" /> やり直す
+                                      </button>
+                                    </div>
+                                  )}
+
+                                  {step.status === 'skipped' && (
+                                    <div className="flex items-center justify-between">
+                                      <span className="text-yellow-400 text-sm flex items-center gap-1">
+                                        <SkipForward className="w-4 h-4" /> スキップ済み
+                                      </span>
+                                      <button
+                                        onClick={() => resetStepData(step.id)}
+                                        className="text-xs text-gray-400 hover:text-white flex items-center gap-1"
+                                      >
+                                        <RotateCcw className="w-3 h-3" /> やり直す
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
