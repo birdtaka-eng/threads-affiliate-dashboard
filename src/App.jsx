@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronRight, ChevronDown, Check, Lock, Play, Settings, User, Search, FileText, Calendar, BarChart3, Zap, Shield, AlertTriangle, Sparkles, Target, TrendingUp, Box, Clock, LineChart, ExternalLink, AlertCircle, XCircle } from 'lucide-react';
+import { ChevronRight, ChevronDown, Check, Lock, Play, Settings, User, Search, FileText, Calendar, BarChart3, Zap, Shield, AlertTriangle, Sparkles, Target, TrendingUp, Box, Clock, LineChart, ExternalLink, AlertCircle, XCircle, SkipForward } from 'lucide-react';
 
 // フェーズとステップのデータ構造
 const initialPhases = [
@@ -493,8 +493,17 @@ export default function Dashboard() {
   // ステップを完了にする
   const completeStep = (stepId) => {
     updateStepStatus(stepId, 'completed');
-    
-    // 次のステップをアンロック
+    unlockNextStep(stepId);
+  };
+
+  // ステップをスキップする
+  const skipStep = (stepId) => {
+    updateStepStatus(stepId, 'skipped');
+    unlockNextStep(stepId);
+  };
+
+  // 次のステップをアンロック
+  const unlockNextStep = (stepId) => {
     let foundCurrent = false;
     phases.forEach(phase => {
       phase.steps.forEach(step => {
@@ -519,6 +528,8 @@ export default function Dashboard() {
     switch (status) {
       case 'completed':
         return <Check className="w-5 h-5 text-green-500" />;
+      case 'skipped':
+        return <SkipForward className="w-5 h-5 text-yellow-500" />;
       case 'locked':
         return <Lock className="w-5 h-5 text-gray-400" />;
       default:
@@ -962,7 +973,11 @@ export default function Dashboard() {
                     <Check className="w-4 h-4" />
                     完了にする
                   </button>
-                  <button className="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-lg transition-all">
+                  <button
+                    onClick={() => skipStep(selectedStep.id)}
+                    className="bg-yellow-600 hover:bg-yellow-700 px-4 py-2 rounded-lg flex items-center gap-2 transition-all"
+                  >
+                    <SkipForward className="w-4 h-4" />
                     スキップ
                   </button>
                 </div>
@@ -972,6 +987,13 @@ export default function Dashboard() {
                 <div className="mt-6 flex items-center gap-2 text-green-400">
                   <Check className="w-5 h-5" />
                   <span>このステップは完了しています</span>
+                </div>
+              )}
+
+              {selectedStep.status === 'skipped' && (
+                <div className="mt-6 flex items-center gap-2 text-yellow-400">
+                  <SkipForward className="w-5 h-5" />
+                  <span>このステップはスキップしました</span>
                 </div>
               )}
             </div>
