@@ -1,45 +1,99 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronRight, ChevronDown, Check, Lock, Play, Settings, User, Search, FileText, Calendar, BarChart3, Zap, Shield, AlertTriangle, Sparkles, Target, TrendingUp, Box, Clock, LineChart, ExternalLink, AlertCircle, XCircle, SkipForward, RotateCcw, Trash2, Plus, Edit3, Save, Key } from 'lucide-react';
+import { ChevronRight, ChevronDown, Check, Lock, Play, Settings, User, Search, FileText, Calendar, BarChart3, Zap, Shield, AlertTriangle, Sparkles, Target, TrendingUp, Box, Clock, LineChart, ExternalLink, AlertCircle, XCircle, SkipForward, RotateCcw, Trash2, Plus, Edit3, Save, Key, HelpCircle, X, Eye, EyeOff } from 'lucide-react';
 
-// 各ステップのフォーム設定
+// 各ステップのフォーム設定（RPG風：説明・質問付き）
 const stepFormConfigs = {
   '0-1': {
-    type: 'checklist',
     fields: [
-      { id: 'hasAccount', label: '楽天会員アカウントを持っている', type: 'checkbox' },
-      { id: 'registered', label: '楽天アフィリエイトに登録完了', type: 'checkbox' },
-      { id: 'affiliateId', label: 'アフィリエイトID', type: 'text', placeholder: '例: 12345678' },
+      {
+        id: 'hasAccount',
+        label: '楽天会員アカウントを持っている',
+        type: 'checkbox',
+        question: '楽天で買い物したことはありますか？',
+        explanation: '楽天会員アカウントは楽天アフィリエイトの登録に必要です。普段楽天で買い物している人は既に持っています。'
+      },
+      {
+        id: 'registered',
+        label: '楽天アフィリエイトに登録完了',
+        type: 'checkbox',
+        question: '楽天アフィリエイトの登録ページで登録しましたか？',
+        explanation: '審査なしで即日利用可能です。楽天会員アカウントでログインして、利用規約に同意するだけでOK。'
+      },
+      {
+        id: 'affiliateId',
+        label: 'アフィリエイトID',
+        type: 'text',
+        placeholder: '例: 12345678',
+        question: '登録後に発行されたIDは何ですか？',
+        explanation: 'このIDがあなた専用のアフィリエイトリンクを作るために必要です。管理画面の「サイト情報」で確認できます。'
+      },
     ],
     completionCheck: (data) => data?.registered && data?.affiliateId,
   },
   '0-2': {
-    type: 'checklist',
     fields: [
-      { id: 'hasInstagram', label: 'Instagramアカウントを持っている', type: 'checkbox' },
-      { id: 'threadsCreated', label: 'Threadsアカウント作成完了', type: 'checkbox' },
-      { id: 'threadsUsername', label: 'Threadsユーザー名', type: 'text', placeholder: '@username' },
+      {
+        id: 'hasInstagram',
+        label: 'Instagramアカウントを持っている',
+        type: 'checkbox',
+        question: 'Instagramのアカウントはありますか？',
+        explanation: 'ThreadsはInstagramと連携して作成します。なければ先にInstagramアカウントを作りましょう。'
+      },
+      {
+        id: 'threadsCreated',
+        label: 'Threadsアカウント作成完了',
+        type: 'checkbox',
+        question: 'Threadsアプリでアカウントを作成しましたか？',
+        explanation: 'Threadsアプリをダウンロードして、Instagramアカウントでログインするだけです。'
+      },
+      {
+        id: 'threadsUsername',
+        label: 'Threadsユーザー名',
+        type: 'text',
+        placeholder: '@username',
+        question: 'あなたのThreadsユーザー名は？',
+        explanation: '後で確認するために記録しておきましょう。@から始まるユーザー名です。'
+      },
     ],
     warnings: [
-      { condition: (data, mode) => mode === 'beginner', message: 'PC初回ログインでアカウント停止のリスクあり。まずスマホで数投稿してから！', type: 'warning' },
+      { condition: (data, mode) => mode === 'beginner', message: '⚠️ PC初回ログインでアカウント停止のリスクあり。まずスマホで数投稿してから！', type: 'warning' },
     ],
     completionCheck: (data) => data?.threadsCreated && data?.threadsUsername,
   },
   '0-3': {
-    type: 'checklist',
     fields: [
-      { id: 'urlCopied', label: 'ThreadsプロフィールURLをコピーした', type: 'checkbox' },
-      { id: 'siteRegistered', label: '楽天にサイト登録申請した', type: 'checkbox' },
-      { id: 'approved', label: '審査完了（承認済み）', type: 'checkbox' },
+      {
+        id: 'urlCopied',
+        label: 'ThreadsプロフィールURLをコピーした',
+        type: 'checkbox',
+        question: 'ThreadsのプロフィールURLをコピーしましたか？',
+        explanation: 'Threadsアプリの自分のプロフィール画面から「プロフィールをシェア」でURLをコピーできます。'
+      },
+      {
+        id: 'siteRegistered',
+        label: '楽天にサイト登録申請した',
+        type: 'checkbox',
+        question: '楽天アフィリエイト管理画面でサイト登録しましたか？',
+        explanation: '楽天アフィリエイト管理画面 → サイト情報 → 新規サイト追加 でThreadsのURLを登録します。'
+      },
+      {
+        id: 'approved',
+        label: '審査完了（承認済み）',
+        type: 'checkbox',
+        question: '審査は完了しましたか？（通常1-3日）',
+        explanation: '承認されるまではアフィリエイトリンクを貼っても報酬が発生しません。焦らず待ちましょう。'
+      },
     ],
     completionCheck: (data) => data?.approved,
   },
   '1-1': {
-    type: 'selection',
     fields: [
       {
         id: 'selectedGenre',
         label: 'ジャンルを選択',
         type: 'select',
+        question: 'どんな商品を紹介したいですか？',
+        explanation: '初心者は「見た目が映える商品」がオススメ！画像だけで興味を引けるので、難しい言葉を考えなくてOK。インテリア・ファッション・ガジェットは画像映え◎で言葉不要。コスメ・サプリは言葉での説得が必要なので中〜上級者向け。',
         options: [
           { value: 'interior', label: 'インテリア・雑貨', difficulty: '初心者向け', warning: null },
           { value: 'fashion', label: 'ファッション', difficulty: '初心者向け', warning: null },
@@ -49,40 +103,116 @@ const stepFormConfigs = {
           { value: 'other', label: 'その他', difficulty: '-', warning: null },
         ],
       },
-      { id: 'customGenre', label: 'その他の場合、具体的に', type: 'text', placeholder: '具体的なジャンル名', showIf: (data) => data?.selectedGenre === 'other' },
-      { id: 'genreReason', label: 'このジャンルを選んだ理由', type: 'textarea', placeholder: '例: 自分も好きで詳しいから' },
+      {
+        id: 'customGenre',
+        label: 'その他の場合、具体的に',
+        type: 'text',
+        placeholder: '具体的なジャンル名',
+        showIf: (data) => data?.selectedGenre === 'other',
+        question: '具体的にどんなジャンルですか？',
+        explanation: '「見た目が大切なモノ」かどうかを考えてみてください。'
+      },
+      {
+        id: 'genreReason',
+        label: 'このジャンルを選んだ理由',
+        type: 'textarea',
+        placeholder: '例: 自分も好きで詳しいから、毎日見ても飽きないから',
+        question: 'なぜこのジャンルに興味がありますか？',
+        explanation: 'SNS副業は継続が1番重要。楽しみながら投稿できるものを選ぶと続けやすいです。好きなことなら知識ゼロでもOK！'
+      },
     ],
     completionCheck: (data) => data?.selectedGenre && (data?.selectedGenre !== 'other' || data?.customGenre),
   },
   '1-2': {
-    type: 'form',
     fields: [
-      { id: 'targetAge', label: 'ターゲット年齢層', type: 'select', options: [
-        { value: '10-20', label: '10-20代' },
-        { value: '20-30', label: '20-30代' },
-        { value: '30-40', label: '30-40代' },
-        { value: '40-50', label: '40-50代' },
-        { value: '50+', label: '50代以上' },
-        { value: 'all', label: '全年齢' },
-      ]},
-      { id: 'targetGender', label: 'ターゲット性別', type: 'select', options: [
-        { value: 'female', label: '女性' },
-        { value: 'male', label: '男性' },
-        { value: 'all', label: '両方' },
-      ]},
-      { id: 'accountCharacter', label: 'アカウントのキャラ設定', type: 'textarea', placeholder: '例: 同世代の雑貨好き女子として、おしゃれアイテムを紹介' },
-      { id: 'oneLiner', label: '一言コンセプト', type: 'text', placeholder: '〇〇な人に△△を届けるアカウント' },
+      {
+        id: 'targetAge',
+        label: 'ターゲット年齢層',
+        type: 'select',
+        question: 'どんな年齢の人に届けたいですか？',
+        explanation: '自分と同じ年代を選ぶと共感されやすいです。迷ったら「自分と同世代」を選びましょう。',
+        options: [
+          { value: '10-20', label: '10-20代' },
+          { value: '20-30', label: '20-30代' },
+          { value: '30-40', label: '30-40代' },
+          { value: '40-50', label: '40-50代' },
+          { value: '50+', label: '50代以上' },
+          { value: 'all', label: '全年齢' },
+        ]
+      },
+      {
+        id: 'targetGender',
+        label: 'ターゲット性別',
+        type: 'select',
+        question: '男性向け？女性向け？両方？',
+        explanation: '選んだジャンルによって自然と決まることが多いです。雑貨・コスメは女性向け、ガジェットは男性向けが多いです。',
+        options: [
+          { value: 'female', label: '女性' },
+          { value: 'male', label: '男性' },
+          { value: 'all', label: '両方' },
+        ]
+      },
+      {
+        id: 'accountCharacter',
+        label: 'アカウントのキャラ設定',
+        type: 'textarea',
+        placeholder: '例: 同世代の雑貨好き女子として、おしゃれアイテムを紹介',
+        question: 'あなたはどんなキャラで発信しますか？',
+        explanation: '「同世代の〇〇好き」くらいシンプルでOK。細かいペルソナ設計は不要です。'
+      },
+      {
+        id: 'oneLiner',
+        label: '一言コンセプト',
+        type: 'text',
+        placeholder: '〇〇な人に△△を届けるアカウント',
+        question: '一言で表すと、どんなアカウント？',
+        explanation: '例：「20-30代女性に素敵な暮らしアイテムを紹介するアカウント」これだけで十分！'
+      },
     ],
     completionCheck: (data) => data?.targetAge && data?.targetGender && data?.oneLiner,
   },
   '1-3': {
-    type: 'form',
     fields: [
-      { id: 'accountName', label: 'アカウント名', type: 'text', placeholder: '例: みゆ｜暮らしの雑貨' },
-      { id: 'profileTitle', label: '肩書き（1行）', type: 'text', placeholder: '例: 30代｜インテリア好き' },
-      { id: 'profileValue', label: '提供価値', type: 'text', placeholder: '例: 毎日おしゃれアイテム紹介' },
-      { id: 'profileCTA', label: 'CTA（行動喚起）', type: 'text', placeholder: '例: フォローで見逃し防止' },
-      { id: 'fullProfile', label: 'プロフィール全文（プレビュー用）', type: 'textarea', placeholder: '上記を組み合わせた完成形' },
+      {
+        id: 'accountName',
+        label: 'アカウント名',
+        type: 'text',
+        placeholder: '例: みゆ｜暮らしの雑貨',
+        question: 'あなたの名前＋ジャンルを組み合わせてみましょう',
+        explanation: '覚えやすく、ジャンルが伝わる名前がベスト。「名前｜ジャンル」の形式が人気です。'
+      },
+      {
+        id: 'profileTitle',
+        label: '肩書き（1行）',
+        type: 'text',
+        placeholder: '例: 30代｜インテリア好き',
+        question: 'あなたの年代と興味を一行で',
+        explanation: '権威性がなくても大丈夫。「〇〇代｜〇〇好き」でOK。'
+      },
+      {
+        id: 'profileValue',
+        label: '提供価値',
+        type: 'text',
+        placeholder: '例: 毎日おしゃれアイテム紹介',
+        question: 'フォローすると何が見れますか？',
+        explanation: '「毎日〇〇紹介」「週3で〇〇情報」など、具体的に。'
+      },
+      {
+        id: 'profileCTA',
+        label: 'CTA（行動喚起）',
+        type: 'text',
+        placeholder: '例: フォローで見逃し防止',
+        question: 'フォローを促す一言は？',
+        explanation: '「フォローで見逃し防止」「いいねで応援」など。'
+      },
+      {
+        id: 'fullProfile',
+        label: 'プロフィール全文',
+        type: 'textarea',
+        placeholder: '上記を組み合わせて完成させましょう',
+        question: '上の内容を組み合わせてプロフィールを完成させましょう',
+        explanation: '絵文字は1-2個まで。シンプルに、3秒で価値が伝わるように。'
+      },
     ],
     warnings: [
       { condition: (data) => data?.fullProfile?.includes('元美容部員'), message: '「元美容部員」等の虚偽の肩書きは禁止です', type: 'error' },
@@ -90,148 +220,391 @@ const stepFormConfigs = {
     completionCheck: (data) => data?.accountName && data?.fullProfile,
   },
   '1-4': {
-    type: 'checklist',
     fields: [
-      { id: 'iconStyle', label: 'アイコンスタイル', type: 'select', options: [
-        { value: 'face', label: '顔出し' },
-        { value: 'illustration', label: 'イラスト' },
-        { value: 'product', label: '商品・アイテム画像' },
-        { value: 'logo', label: 'ロゴ・文字' },
-      ]},
-      { id: 'iconCreated', label: 'アイコン画像を作成した', type: 'checkbox' },
-      { id: 'iconSet', label: 'Threadsにアイコンを設定した', type: 'checkbox' },
+      {
+        id: 'iconStyle',
+        label: 'アイコンスタイル',
+        type: 'select',
+        question: 'どんなアイコンにしますか？',
+        explanation: '顔出しなしでもOK。イラストや商品画像で統一感を出せばOK。Canvaで簡単に作れます。',
+        options: [
+          { value: 'face', label: '顔出し' },
+          { value: 'illustration', label: 'イラスト' },
+          { value: 'product', label: '商品・アイテム画像' },
+          { value: 'logo', label: 'ロゴ・文字' },
+        ]
+      },
+      {
+        id: 'iconCreated',
+        label: 'アイコン画像を作成した',
+        type: 'checkbox',
+        question: 'アイコン画像は準備できましたか？',
+        explanation: '正方形で、背景はシンプルに。スマホで見ても分かりやすいものに。'
+      },
+      {
+        id: 'iconSet',
+        label: 'Threadsにアイコンを設定した',
+        type: 'checkbox',
+        question: 'Threadsのプロフィールに設定しましたか？',
+        explanation: 'プロフィール編集からアイコンを変更できます。'
+      },
     ],
     completionCheck: (data) => data?.iconSet,
   },
   '2-1': {
-    type: 'counter',
     fields: [
-      { id: 'largeAccountsCount', label: 'フォローした大手アカウント数', type: 'number', min: 0, max: 20, target: 5 },
-      { id: 'largeAccountsList', label: 'フォローしたアカウント（メモ）', type: 'textarea', placeholder: '@account1\n@account2\n...' },
+      {
+        id: 'largeAccountsCount',
+        label: 'フォローした大手アカウント数',
+        type: 'number',
+        min: 0,
+        max: 20,
+        target: 5,
+        question: '何件の大手アカウントをフォローしましたか？',
+        explanation: '大手をフォローすると、ホーム欄がジャンル関連で埋まってリサーチしやすくなります。バズるパターンも自然と身につきます。'
+      },
+      {
+        id: 'largeAccountsList',
+        label: 'フォローしたアカウント',
+        type: 'textarea',
+        placeholder: '@account1\n@account2\n...',
+        question: 'フォローしたアカウントをメモしておきましょう',
+        explanation: '後で参考にするためにメモしておくと便利です。'
+      },
     ],
     completionCheck: (data) => data?.largeAccountsCount >= 5,
   },
   '2-2': {
-    type: 'counter',
     fields: [
-      { id: 'midAccountsCount', label: 'フォローした中規模アカウント数', type: 'number', min: 0, max: 20, target: 5 },
-      { id: 'midAccountsList', label: 'フォローしたアカウント（メモ）', type: 'textarea', placeholder: '@account1\n@account2\n...' },
+      {
+        id: 'midAccountsCount',
+        label: 'フォローした中規模アカウント数',
+        type: 'number',
+        min: 0,
+        max: 20,
+        target: 5,
+        question: '何件の中規模アカウントをフォローしましたか？',
+        explanation: 'フォロワー500-5,000人は「再現可能な成功例」。完璧じゃなくても伸びてる=自分でも真似できる！'
+      },
+      {
+        id: 'midAccountsList',
+        label: 'フォローしたアカウント',
+        type: 'textarea',
+        placeholder: '@account1\n@account2\n...',
+        question: '「自分もできそう」と思ったアカウントは？',
+        explanation: 'フォロワーが少ないのにバズってる投稿 = 「商品自体にバズる力がある」証拠です。'
+      },
     ],
     completionCheck: (data) => data?.midAccountsCount >= 5,
   },
   '2-3': {
-    type: 'counter',
     fields: [
-      { id: 'buzzPostsCount', label: 'ストックしたバズ投稿数', type: 'number', min: 0, max: 50, target: 10 },
-      { id: 'buzzPostsNotes', label: 'バズ投稿の分析メモ', type: 'textarea', placeholder: '・〇〇の投稿: フック文が良かった\n・△△の投稿: 画像が映えてた' },
+      {
+        id: 'buzzPostsCount',
+        label: 'ストックしたバズ投稿数',
+        type: 'number',
+        min: 0,
+        max: 50,
+        target: 10,
+        question: '参考になる投稿を何件保存しましたか？',
+        explanation: 'バズ投稿には「型」があります。保存→分析→アレンジで効率的にバズを狙えます。'
+      },
+      {
+        id: 'buzzPostsNotes',
+        label: 'バズ投稿の分析メモ',
+        type: 'textarea',
+        placeholder: '・〇〇の投稿: フック文が良かった\n・△△の投稿: 画像が映えてた',
+        question: 'なぜその投稿はバズったと思いますか？',
+        explanation: '「フック文が良い」「画像が映えてる」「共感できる」など、理由を書いておくと後で役立ちます。'
+      },
     ],
     completionCheck: (data) => data?.buzzPostsCount >= 10,
   },
   '2-4': {
-    type: 'counter',
     fields: [
-      { id: 'productCount', label: 'リストアップした商品数', type: 'number', min: 0, max: 50, target: 10 },
-      { id: 'productList', label: '商品リスト', type: 'textarea', placeholder: '1. 商品名 - 楽天URL\n2. 商品名 - 楽天URL\n...' },
+      {
+        id: 'productCount',
+        label: 'リストアップした商品数',
+        type: 'number',
+        min: 0,
+        max: 50,
+        target: 10,
+        question: '紹介したい商品を何件見つけましたか？',
+        explanation: '事前にストックしておくと、投稿ネタに困りません。楽天で同じ商品を検索してブックマークしておきましょう。'
+      },
+      {
+        id: 'productList',
+        label: '商品リスト',
+        type: 'textarea',
+        placeholder: '1. 商品名 - 楽天URL\n2. 商品名 - 楽天URL\n...',
+        question: '見つけた商品をリストアップしましょう',
+        explanation: '価格帯は2,000-10,000円がクリックされやすい。「画像映え」する商品を優先！'
+      },
     ],
     completionCheck: (data) => data?.productCount >= 10,
   },
   '3-1': {
-    type: 'form',
     fields: [
-      { id: 'greetingTemplate', label: '使用するテンプレート', type: 'select', options: [
-        { value: 'gather', label: '「〇〇な人、集まれ！」' },
-        { value: 'followOnly', label: '「〇〇好きだけフォローして」' },
-        { value: 'introduction', label: '「はじめまして！〇〇歳の〇〇です」' },
-        { value: 'passion', label: '「〇〇が好きすぎて発信始めました」' },
-        { value: 'custom', label: 'オリジナル' },
-      ]},
-      { id: 'greetingPost', label: '挨拶投稿の本文', type: 'textarea', placeholder: '投稿本文を入力...', rows: 6 },
-      { id: 'greetingReady', label: '投稿準備完了', type: 'checkbox' },
+      {
+        id: 'greetingTemplate',
+        label: '使用するテンプレート',
+        type: 'select',
+        question: 'どのテンプレートを使いますか？',
+        explanation: 'Threadsでは「はじめまして投稿」がバズりやすい！フォロワー0でも800いいね以上獲得した実例あり。',
+        options: [
+          { value: 'gather', label: '「〇〇な人、集まれ！」' },
+          { value: 'followOnly', label: '「〇〇好きだけフォローして」' },
+          { value: 'introduction', label: '「はじめまして！〇〇歳の〇〇です」' },
+          { value: 'passion', label: '「〇〇が好きすぎて発信始めました」' },
+          { value: 'custom', label: 'オリジナル' },
+        ]
+      },
+      {
+        id: 'greetingPost',
+        label: '挨拶投稿の本文',
+        type: 'textarea',
+        placeholder: '投稿本文を入力...',
+        rows: 6,
+        question: 'テンプレートを参考に、あなたの挨拶投稿を書いてみましょう',
+        explanation: 'ターゲットに刺さるフック文 + 自分の属性 + ジャンルのバズワード + CTA（いいね、フォローを促す）の構成で。'
+      },
+      {
+        id: 'greetingReady',
+        label: '投稿準備完了',
+        type: 'checkbox',
+        question: '投稿する準備はできましたか？',
+        explanation: 'バズったらコメント欄に「他にもこんな投稿してます！プロフィール見てね」と追加して誘導しましょう。'
+      },
     ],
     completionCheck: (data) => data?.greetingPost && data?.greetingReady,
   },
   '3-2': {
-    type: 'counter',
     fields: [
-      { id: 'draftPostsCount', label: '準備した投稿数', type: 'number', min: 0, max: 20, target: 5 },
-      { id: 'draftPostsList', label: '準備した投稿メモ', type: 'textarea', placeholder: '1. 〇〇商品の紹介\n2. △△商品の紹介\n...' },
+      {
+        id: 'draftPostsCount',
+        label: '準備した投稿数',
+        type: 'number',
+        min: 0,
+        max: 20,
+        target: 5,
+        question: '何件の投稿を準備しましたか？',
+        explanation: '投稿の「弾」を事前に用意しておくと、継続が楽になります。'
+      },
+      {
+        id: 'draftPostsList',
+        label: '準備した投稿メモ',
+        type: 'textarea',
+        placeholder: '1. 〇〇商品の紹介\n2. △△商品の紹介\n...',
+        question: 'どんな投稿を準備しましたか？',
+        explanation: 'アカウント初期は「すでにバズっている商品」を多めに投稿するのがコツ。'
+      },
     ],
     completionCheck: (data) => data?.draftPostsCount >= 5,
   },
   '3-3': {
-    type: 'form',
     fields: [
-      { id: 'postsPerDay', label: '1日の投稿数', type: 'select', options: [
-        { value: '1-2', label: '1-2投稿' },
-        { value: '3-4', label: '3-4投稿' },
-        { value: '5+', label: '5投稿以上（推奨）' },
-      ]},
-      { id: 'mainPostTime', label: 'メインの投稿時間', type: 'select', options: [
-        { value: 'morning', label: '7:00-8:00（朝）' },
-        { value: 'lunch', label: '12:00-13:00（昼）' },
-        { value: 'evening', label: '20:00-21:00（夜・推奨）' },
-      ]},
-      { id: 'scheduleNotes', label: 'スケジュールメモ', type: 'textarea', placeholder: '月: アフィ投稿\n火: 有益投稿\n...' },
+      {
+        id: 'postsPerDay',
+        label: '1日の投稿数',
+        type: 'select',
+        question: '1日に何回投稿しますか？',
+        explanation: '最低5投稿が推奨。でも無理のない範囲で継続できる数を選びましょう。',
+        options: [
+          { value: '1-2', label: '1-2投稿' },
+          { value: '3-4', label: '3-4投稿' },
+          { value: '5+', label: '5投稿以上（推奨）' },
+        ]
+      },
+      {
+        id: 'mainPostTime',
+        label: 'メインの投稿時間',
+        type: 'select',
+        question: 'いつ投稿しますか？',
+        explanation: '20-21時が最も伸びやすい「ゴールデンタイム」。推し商品はこの時間に！',
+        options: [
+          { value: 'morning', label: '7:00-8:00（朝）' },
+          { value: 'lunch', label: '12:00-13:00（昼）' },
+          { value: 'evening', label: '20:00-21:00（夜・推奨）' },
+        ]
+      },
+      {
+        id: 'scheduleNotes',
+        label: 'スケジュールメモ',
+        type: 'textarea',
+        placeholder: '月: アフィ投稿\n火: 有益投稿\n...',
+        question: '曜日ごとの投稿タイプを決めましょう',
+        explanation: '楽天イベント（5と0のつく日、お買い物マラソン）に合わせて投稿頻度UPがオススメ。'
+      },
     ],
     completionCheck: (data) => data?.postsPerDay && data?.mainPostTime,
   },
   '4-1': {
-    type: 'checklist',
     fields: [
-      { id: 'day1Posted', label: '挨拶投稿を実行した', type: 'checkbox' },
-      { id: 'day1Engagement', label: '投稿後、同ジャンルにいいね回りをした', type: 'checkbox' },
-      { id: 'day1Result', label: '3時間後の反応', type: 'text', placeholder: '例: いいね50、コメント5' },
+      {
+        id: 'day1Posted',
+        label: '挨拶投稿を実行した',
+        type: 'checkbox',
+        question: '挨拶投稿を投稿しましたか？',
+        explanation: '19-21時の投稿がオススメ。投稿後のアクション（いいね回り）で初速をブースト！'
+      },
+      {
+        id: 'day1Engagement',
+        label: '投稿後、同ジャンルにいいね回りをした',
+        type: 'checkbox',
+        question: '同ジャンルの投稿にいいねしましたか？',
+        explanation: 'いいね回りでジャンル認知を高めます。コメント周りは不自然に見えるので非推奨。'
+      },
+      {
+        id: 'day1Result',
+        label: '3時間後の反応',
+        type: 'text',
+        placeholder: '例: いいね50、コメント5',
+        question: '投稿の反応はどうでしたか？',
+        explanation: '記録しておくと、後で分析に役立ちます。'
+      },
     ],
     completionCheck: (data) => data?.day1Posted,
   },
   '4-2': {
-    type: 'checklist',
     fields: [
-      { id: 'day2AffPosted', label: 'アフィリエイト投稿を開始した', type: 'checkbox' },
-      { id: 'day2PRmarked', label: 'PR表記をつけている', type: 'checkbox' },
-      { id: 'day2LinkInComment', label: 'リンクはコメント欄に貼っている', type: 'checkbox' },
-      { id: 'day2Notes', label: '反応メモ', type: 'textarea', placeholder: '投稿ごとの反応を記録' },
+      {
+        id: 'day2AffPosted',
+        label: 'アフィリエイト投稿を開始した',
+        type: 'checkbox',
+        question: '商品紹介投稿を始めましたか？',
+        explanation: '準備した商品投稿を1-2個投稿してみましょう。'
+      },
+      {
+        id: 'day2PRmarked',
+        label: 'PR表記をつけている',
+        type: 'checkbox',
+        question: 'PR表記は入れていますか？',
+        explanation: 'アフィリエイトリンクを貼る投稿には必ずPR表記が必要です。規約違反にならないように！'
+      },
+      {
+        id: 'day2LinkInComment',
+        label: 'リンクはコメント欄に貼っている',
+        type: 'checkbox',
+        question: 'リンクはコメント欄に貼っていますか？',
+        explanation: '外部リンクを本文に入れると表示回数が下がる傾向があります。コメント欄がオススメ。'
+      },
+      {
+        id: 'day2Notes',
+        label: '反応メモ',
+        type: 'textarea',
+        placeholder: '投稿ごとの反応を記録',
+        question: '投稿の反応はどうでしたか？',
+        explanation: 'どの商品が反応良かったかを記録しておきましょう。'
+      },
     ],
     warnings: [
-      { condition: (data, mode) => mode === 'beginner' && !data?.day2PRmarked, message: 'PR表記は必須です！忘れると規約違反になります', type: 'error' },
+      { condition: (data, mode) => mode === 'beginner' && !data?.day2PRmarked, message: '⚠️ PR表記は必須です！忘れると規約違反になります', type: 'error' },
     ],
     completionCheck: (data) => data?.day2AffPosted && data?.day2PRmarked,
   },
   '4-3': {
-    type: 'form',
     fields: [
-      { id: 'rotationStarted', label: '3種類の投稿ローテーションを開始した', type: 'checkbox' },
-      { id: 'weeklyPlan', label: '週間投稿計画', type: 'textarea', placeholder: '月: 収益投稿\n火: フォロワー増加投稿\n水: ファン化投稿\n...', rows: 7 },
+      {
+        id: 'rotationStarted',
+        label: '3種類の投稿ローテーションを開始した',
+        type: 'checkbox',
+        question: '投稿の種類を意識して投稿していますか？',
+        explanation: '収益投稿・フォロワー増加投稿・ファン化投稿の3種類をバランスよく。有益投稿がバズると次のアフィ投稿も伸びやすい！'
+      },
+      {
+        id: 'weeklyPlan',
+        label: '週間投稿計画',
+        type: 'textarea',
+        placeholder: '月: 収益投稿\n火: フォロワー増加投稿\n水: ファン化投稿\n...',
+        rows: 7,
+        question: '1週間の投稿計画を立てましょう',
+        explanation: '収益投稿週3-4回、フォロワー増加投稿週2-3回、ファン化投稿週1-2回が目安。'
+      },
     ],
     completionCheck: (data) => data?.rotationStarted,
   },
   '5-1': {
-    type: 'checklist',
     fields: [
-      { id: 'roomCreated', label: '楽天ROOMアカウント作成済み', type: 'checkbox' },
-      { id: 'roomLinked', label: 'プロフィールにROOMリンク追加済み', type: 'checkbox' },
-      { id: 'roomUrl', label: '楽天ROOM URL', type: 'text', placeholder: 'https://room.rakuten.co.jp/...' },
+      {
+        id: 'roomCreated',
+        label: '楽天ROOMアカウント作成済み',
+        type: 'checkbox',
+        question: '楽天ROOMのアカウントは作りましたか？',
+        explanation: 'ROOMを活用するとまとめ投稿が楽になり、収益UPが期待できます。'
+      },
+      {
+        id: 'roomLinked',
+        label: 'プロフィールにROOMリンク追加済み',
+        type: 'checkbox',
+        question: 'ThreadsプロフィールにROOMリンクを追加しましたか？',
+        explanation: 'プロフィールにROOMリンクを入れておくと、「詳細はROOMで」と誘導できます。'
+      },
+      {
+        id: 'roomUrl',
+        label: '楽天ROOM URL',
+        type: 'text',
+        placeholder: 'https://room.rakuten.co.jp/...',
+        question: 'あなたのROOMのURLは？',
+        explanation: '後で確認するために記録しておきましょう。'
+      },
     ],
     completionCheck: (data) => data?.roomLinked,
   },
   '5-2': {
-    type: 'form',
     fields: [
-      { id: 'analysisStarted', label: '投稿分析を開始した', type: 'checkbox' },
-      { id: 'bestPost', label: '最もバズった投稿', type: 'textarea', placeholder: 'どの投稿がなぜバズったか' },
-      { id: 'improvements', label: '改善点（3つ）', type: 'textarea', placeholder: '1. 〇〇を改善\n2. △△を試す\n3. □□を強化' },
+      {
+        id: 'analysisStarted',
+        label: '投稿分析を開始した',
+        type: 'checkbox',
+        question: '投稿の振り返りを始めましたか？',
+        explanation: '成果を出す人は「投稿して終わり」ではなく、必ず振り返りをしています。'
+      },
+      {
+        id: 'bestPost',
+        label: '最もバズった投稿',
+        type: 'textarea',
+        placeholder: 'どの投稿がなぜバズったか',
+        question: '一番反応が良かった投稿は？なぜだと思いますか？',
+        explanation: 'Threadsは一度バズった投稿が何度でも伸びる傾向があります。'
+      },
+      {
+        id: 'improvements',
+        label: '改善点（3つ）',
+        type: 'textarea',
+        placeholder: '1. 〇〇を改善\n2. △△を試す\n3. □□を強化',
+        question: '来週試してみたい改善点は？',
+        explanation: '投稿→振り返り→改善のシンプルなPDCAをコツコツ回すのが成功の近道。'
+      },
     ],
     completionCheck: (data) => data?.analysisStarted,
   },
   '5-3': {
-    type: 'checklist',
     fields: [
-      { id: 'ready', label: '1つ目のアカウントが軌道に乗った', type: 'checkbox' },
-      { id: 'secondGenre', label: '2つ目のジャンル', type: 'text', placeholder: '例: ファッション' },
-      { id: 'secondAccount', label: '2つ目のアカウント作成済み', type: 'checkbox' },
+      {
+        id: 'ready',
+        label: '1つ目のアカウントが軌道に乗った',
+        type: 'checkbox',
+        question: '1つ目のアカウントは順調ですか？',
+        explanation: '目安：フォロワー1000人 or 運用1ヶ月経過。焦らず1つ目を育ててから。'
+      },
+      {
+        id: 'secondGenre',
+        label: '2つ目のジャンル',
+        type: 'text',
+        placeholder: '例: ファッション',
+        question: '2つ目はどんなジャンルにしますか？',
+        explanation: '1つ目と違うジャンルで横展開すると、収益源が分散できます。'
+      },
+      {
+        id: 'secondAccount',
+        label: '2つ目のアカウント作成済み',
+        type: 'checkbox',
+        question: '2つ目のアカウントは作りましたか？',
+        explanation: '同じノウハウで横展開できるのがThreadsの強み！'
+      },
     ],
     warnings: [
-      { condition: (data, mode) => mode === 'beginner' && !data?.ready, message: '1つ目が軌道に乗るまでは焦らないで！', type: 'warning' },
+      { condition: (data, mode) => mode === 'beginner' && !data?.ready, message: '⚠️ 1つ目が軌道に乗るまでは焦らないで！', type: 'warning' },
     ],
     completionCheck: (data) => data?.ready && data?.secondAccount,
   },
@@ -731,6 +1104,11 @@ export default function Dashboard() {
   const [showSafetyInfo, setShowSafetyInfo] = useState(false);
   const [activeTab, setActiveTab] = useState('tasks'); // 'tasks' or 'accounts'
   const [expandedStepId, setExpandedStepId] = useState(null); // 展開中のステップID
+  const [showHints, setShowHints] = useState(() => {
+    const saved = localStorage.getItem('threads-affiliate-showHints');
+    return saved !== null ? JSON.parse(saved) : true; // デフォルトON
+  });
+  const [openExplanation, setOpenExplanation] = useState(null); // 開いている説明のfieldId
 
   // ユーザー入力データ
   const [userData, setUserData] = useState(() => {
@@ -762,6 +1140,10 @@ export default function Dashboard() {
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.MODE, mode);
   }, [mode]);
+
+  useEffect(() => {
+    localStorage.setItem('threads-affiliate-showHints', JSON.stringify(showHints));
+  }, [showHints]);
 
   // ユーザーデータを更新
   const updateUserData = (stepId, fieldId, value) => {
@@ -877,34 +1259,93 @@ export default function Dashboard() {
     }
   };
 
-  // フォームフィールドレンダリング
+  // 説明ポップアップコンポーネント
+  const ExplanationPopup = ({ field, onClose }) => (
+    <div className="mt-2 p-3 bg-blue-900/40 border border-blue-500/50 rounded-lg relative">
+      <button
+        onClick={onClose}
+        className="absolute top-2 right-2 text-gray-400 hover:text-white"
+      >
+        <X className="w-4 h-4" />
+      </button>
+      <div className="pr-6">
+        <p className="text-blue-200 text-sm leading-relaxed">{field.explanation}</p>
+      </div>
+    </div>
+  );
+
+  // フォームフィールドレンダリング（RPG風：質問形式）
   const FormField = ({ field, stepId, data }) => {
     const value = data?.[field.id] ?? '';
+    const fieldKey = `${stepId}-${field.id}`;
+    const isExplanationOpen = openExplanation === fieldKey;
 
     // showIfの条件をチェック
     if (field.showIf && !field.showIf(data)) {
       return null;
     }
 
+    // 質問ラベル（showHintsがONで質問がある場合は質問を表示）
+    const QuestionLabel = ({ className = "text-sm text-gray-300 mb-2" }) => (
+      <div className={`flex items-start gap-2 ${className}`}>
+        <span className="flex-1">
+          {showHints && field.question ? (
+            <span className="text-yellow-300">💬 {field.question}</span>
+          ) : (
+            field.label
+          )}
+        </span>
+        {showHints && field.explanation && (
+          <button
+            onClick={() => setOpenExplanation(isExplanationOpen ? null : fieldKey)}
+            className="text-blue-400 hover:text-blue-300 flex-shrink-0"
+            title="詳しく見る"
+          >
+            <HelpCircle className="w-4 h-4" />
+          </button>
+        )}
+      </div>
+    );
+
     switch (field.type) {
       case 'checkbox':
         return (
-          <label className="flex items-center gap-3 p-3 bg-gray-700/50 rounded-lg cursor-pointer hover:bg-gray-700 transition-all">
-            <input
-              type="checkbox"
-              checked={!!value}
-              onChange={(e) => updateUserData(stepId, field.id, e.target.checked)}
-              className="w-5 h-5 rounded border-gray-500 text-blue-500 focus:ring-blue-500 focus:ring-offset-gray-800"
-            />
-            <span className={value ? 'text-green-400' : 'text-gray-300'}>{field.label}</span>
-            {value && <Check className="w-4 h-4 text-green-500 ml-auto" />}
-          </label>
+          <div className="space-y-1">
+            <div className="flex items-center gap-3 p-3 bg-gray-700/50 rounded-lg cursor-pointer hover:bg-gray-700 transition-all"
+                 onClick={() => updateUserData(stepId, field.id, !value)}>
+              <input
+                type="checkbox"
+                checked={!!value}
+                onChange={(e) => updateUserData(stepId, field.id, e.target.checked)}
+                className="w-5 h-5 rounded border-gray-500 text-blue-500 focus:ring-blue-500 focus:ring-offset-gray-800"
+              />
+              <div className="flex-1">
+                {showHints && field.question ? (
+                  <span className="text-yellow-300 text-sm">💬 {field.question}</span>
+                ) : (
+                  <span className={value ? 'text-green-400' : 'text-gray-300'}>{field.label}</span>
+                )}
+              </div>
+              {showHints && field.explanation && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); setOpenExplanation(isExplanationOpen ? null : fieldKey); }}
+                  className="text-blue-400 hover:text-blue-300"
+                  title="詳しく見る"
+                >
+                  <HelpCircle className="w-4 h-4" />
+                </button>
+              )}
+              {value && <Check className="w-4 h-4 text-green-500" />}
+            </div>
+            {isExplanationOpen && <ExplanationPopup field={field} onClose={() => setOpenExplanation(null)} />}
+          </div>
         );
 
       case 'text':
         return (
           <div className="space-y-1">
-            <label className="text-sm text-gray-400">{field.label}</label>
+            <QuestionLabel />
+            {isExplanationOpen && <ExplanationPopup field={field} onClose={() => setOpenExplanation(null)} />}
             <input
               type="text"
               value={value}
@@ -912,13 +1353,15 @@ export default function Dashboard() {
               placeholder={field.placeholder}
               className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
             />
+            {!showHints && <div className="text-xs text-gray-500">{field.label}</div>}
           </div>
         );
 
       case 'textarea':
         return (
           <div className="space-y-1">
-            <label className="text-sm text-gray-400">{field.label}</label>
+            <QuestionLabel />
+            {isExplanationOpen && <ExplanationPopup field={field} onClose={() => setOpenExplanation(null)} />}
             <textarea
               value={value}
               onChange={(e) => updateUserData(stepId, field.id, e.target.value)}
@@ -926,13 +1369,15 @@ export default function Dashboard() {
               rows={field.rows || 3}
               className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 resize-none"
             />
+            {!showHints && <div className="text-xs text-gray-500">{field.label}</div>}
           </div>
         );
 
       case 'select':
         return (
           <div className="space-y-1">
-            <label className="text-sm text-gray-400">{field.label}</label>
+            <QuestionLabel />
+            {isExplanationOpen && <ExplanationPopup field={field} onClose={() => setOpenExplanation(null)} />}
             <select
               value={value}
               onChange={(e) => updateUserData(stepId, field.id, e.target.value)}
@@ -945,6 +1390,7 @@ export default function Dashboard() {
                 </option>
               ))}
             </select>
+            {!showHints && <div className="text-xs text-gray-500">{field.label}</div>}
             {/* 選択肢に警告がある場合 */}
             {mode === 'beginner' && value && field.options.find(o => o.value === value)?.warning && (
               <div className="mt-2 p-3 bg-yellow-900/30 border border-yellow-500/50 rounded-lg flex items-start gap-2">
@@ -959,7 +1405,8 @@ export default function Dashboard() {
         const progress = field.target ? Math.min((value || 0) / field.target * 100, 100) : 0;
         return (
           <div className="space-y-2">
-            <label className="text-sm text-gray-400">{field.label}</label>
+            <QuestionLabel />
+            {isExplanationOpen && <ExplanationPopup field={field} onClose={() => setOpenExplanation(null)} />}
             <div className="flex items-center gap-3">
               <input
                 type="number"
@@ -984,6 +1431,7 @@ export default function Dashboard() {
                 </div>
               )}
             </div>
+            {!showHints && <div className="text-xs text-gray-500">{field.label}</div>}
           </div>
         );
 
@@ -1098,13 +1546,27 @@ export default function Dashboard() {
               </button>
             </div>
 
+            {/* ヒント表示ON/OFF */}
+            <button
+              onClick={() => setShowHints(!showHints)}
+              className={`px-3 py-1.5 rounded-lg text-sm flex items-center gap-1.5 transition-all border ${
+                showHints
+                  ? 'bg-yellow-900/30 text-yellow-400 border-yellow-500/30 hover:bg-yellow-900/50'
+                  : 'bg-gray-700 text-gray-400 border-gray-600 hover:bg-gray-600'
+              }`}
+              title={showHints ? 'ヒント表示をOFFにする' : 'ヒント表示をONにする'}
+            >
+              {showHints ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+              💬 ヒント{showHints ? 'ON' : 'OFF'}
+            </button>
+
             {/* 設定リセットボタン */}
             <button
               onClick={resetAllSettings}
               className="px-3 py-1.5 rounded-lg text-sm flex items-center gap-1.5 bg-red-900/30 text-red-400 hover:bg-red-900/50 border border-red-500/30 transition-all"
             >
               <RotateCcw className="w-4 h-4" />
-              設定をリセット
+              リセット
             </button>
           </div>
         </div>
