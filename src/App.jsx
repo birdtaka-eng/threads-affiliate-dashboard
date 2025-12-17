@@ -1110,10 +1110,7 @@ export default function Dashboard() {
   });
   const [openExplanation, setOpenExplanation] = useState(null); // 開いている説明のfieldId
   const [achievement, setAchievement] = useState(null); // 達成ポップアップ { message, type }
-  const [showIntro, setShowIntro] = useState(() => {
-    const saved = localStorage.getItem('threads-affiliate-introCompleted');
-    return saved !== 'true'; // 初回はtrue（表示する）、完了後はfalse
-  });
+  const [showIntroSection, setShowIntroSection] = useState(true); // 「はじめに」セクションを表示中か
 
   // ユーザー入力データ
   const [userData, setUserData] = useState(() => {
@@ -1171,15 +1168,6 @@ export default function Dashboard() {
     updateStepStatus(stepId, 'pending');
   };
 
-  // イントロを完了して冒険を始める
-  const completeIntro = () => {
-    localStorage.setItem('threads-affiliate-introCompleted', 'true');
-    setShowIntro(false);
-    // 達成演出
-    setAchievement({ message: '🗡️ 冒険の始まりだ！', type: 'complete' });
-    setTimeout(() => setAchievement(null), 2000);
-  };
-
   // 全設定をリセット
   const resetAllSettings = () => {
     if (window.confirm('全ての設定をリセットしますか？入力内容が全て削除されます。')) {
@@ -1187,13 +1175,12 @@ export default function Dashboard() {
       localStorage.removeItem(STORAGE_KEYS.PHASES);
       localStorage.removeItem(STORAGE_KEYS.ACCOUNTS);
       localStorage.removeItem(STORAGE_KEYS.MODE);
-      localStorage.removeItem('threads-affiliate-introCompleted');
       setUserData({});
       setPhases(initialPhases);
       setAccounts([]);
       setMode('beginner');
       setSelectedStep(null);
-      setShowIntro(true);
+      setShowIntroSection(true);
     }
   };
 
@@ -1575,108 +1562,6 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* はじめに（イントロ）セクション */}
-      {showIntro ? (
-        <div className="min-h-screen flex items-center justify-center p-6">
-          <div className="max-w-2xl w-full">
-            {/* RPG風タイトル */}
-            <div className="text-center mb-8">
-              <div className="inline-block bg-gradient-to-br from-gray-800 to-gray-900 px-8 py-4 rounded-lg border-4 border-yellow-600 shadow-2xl">
-                <h1 className="pixel-font text-yellow-400 text-xl mb-2">〜 副業クエスト 〜</h1>
-                <p className="text-gray-400 text-sm">Threads × 楽天アフィリエイト</p>
-              </div>
-            </div>
-
-            {/* メインコンテンツ */}
-            <div className="space-y-6">
-              {/* 🎮 冒険の始まり */}
-              <div className="bg-gray-800 rounded-lg p-6 border border-gray-700 shadow-lg">
-                <h2 className="flex items-center gap-2 text-xl font-bold mb-4">
-                  <span className="text-2xl">🎮</span>
-                  <span className="text-yellow-400">冒険の始まり</span>
-                </h2>
-                <div className="space-y-3 text-gray-300 leading-relaxed">
-                  <p>
-                    ようこそ、勇者よ。
-                  </p>
-                  <p>
-                    これから<span className="text-yellow-400 font-bold">スレッズ</span>と
-                    <span className="text-yellow-400 font-bold">楽天アフィリエイト</span>を使った
-                    副業の旅が始まります。
-                  </p>
-                  <p className="text-gray-400 text-sm">
-                    もちろん、いきなり玄人向けの設定から始めることもできます。
-                    でも、初めての冒険なら...まずはこのガイドに従ってみてください。
-                  </p>
-                </div>
-              </div>
-
-              {/* 💡 初心者へのおすすめ */}
-              <div className="bg-gray-800 rounded-lg p-6 border border-gray-700 shadow-lg">
-                <h2 className="flex items-center gap-2 text-xl font-bold mb-4">
-                  <span className="text-2xl">💡</span>
-                  <span className="text-blue-400">初心者へのおすすめ</span>
-                </h2>
-                <div className="space-y-3 text-gray-300 leading-relaxed">
-                  <p>
-                    最初の武器として選ぶべきは、
-                    <span className="text-blue-400 font-bold">「見た目で伝わる」</span>ジャンルです。
-                  </p>
-                  <p>
-                    伝えたいことの<span className="text-yellow-400 font-bold">80%が画像で伝わる</span>なら、
-                    難しい言葉を考えなくても大丈夫。
-                  </p>
-                  <div className="bg-blue-900/30 rounded-lg p-4 border border-blue-500/30 mt-4">
-                    <p className="text-blue-300 text-sm">
-                      📷 インテリア、ファッション、ガジェットなど...<br/>
-                      写真を見ただけで「いいな」と思えるものがおすすめです。
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* ⭐ 強みを活かす */}
-              <div className="bg-gray-800 rounded-lg p-6 border border-gray-700 shadow-lg">
-                <h2 className="flex items-center gap-2 text-xl font-bold mb-4">
-                  <span className="text-2xl">⭐</span>
-                  <span className="text-purple-400">強みを活かす</span>
-                </h2>
-                <div className="space-y-3 text-gray-300 leading-relaxed">
-                  <p>
-                    そしてもう一つ大切なこと。
-                  </p>
-                  <p>
-                    あなたが<span className="text-purple-400 font-bold">好きなこと</span>、
-                    <span className="text-purple-400 font-bold">興味があること</span>を選ぶと、
-                    自然と強みになります。
-                  </p>
-                  <p className="text-gray-400 text-sm">
-                    毎日投稿するものだから、楽しみながら続けられることが一番の武器です。
-                  </p>
-                </div>
-              </div>
-
-              {/* 冒険を始めるボタン */}
-              <div className="text-center pt-4">
-                <button
-                  onClick={completeIntro}
-                  className="group relative px-12 py-4 bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-500 hover:to-orange-500 rounded-lg font-bold text-xl shadow-lg transition-all duration-300 hover:scale-105 border-2 border-yellow-400"
-                >
-                  <span className="flex items-center gap-3">
-                    <span className="pixel-font text-sm">▶</span>
-                    冒険を始める
-                    <span className="text-2xl group-hover:translate-x-1 transition-transform">⚔️</span>
-                  </span>
-                </button>
-                <p className="text-gray-500 text-sm mt-4">
-                  ※ いつでも「はじめに」に戻ることができます
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      ) : (
-      <>
       {/* ヘッダー */}
       <header className="bg-gray-800 border-b border-gray-700 px-6 py-4">
         <div className="flex items-center justify-between">
@@ -1729,15 +1614,6 @@ export default function Dashboard() {
             >
               {showHints ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
               💬 ヒント{showHints ? 'ON' : 'OFF'}
-            </button>
-
-            {/* はじめにに戻るボタン */}
-            <button
-              onClick={() => setShowIntro(true)}
-              className="px-3 py-1.5 rounded-lg text-sm flex items-center gap-1.5 bg-gray-700 text-gray-300 hover:bg-gray-600 border border-gray-600 transition-all"
-              title="はじめにを見る"
-            >
-              📖 はじめに
             </button>
 
             {/* 設定リセットボタン */}
@@ -1825,10 +1701,34 @@ export default function Dashboard() {
         {/* サイドバー - フェーズ一覧 */}
         <aside className="w-96 bg-gray-800 min-h-screen max-h-screen overflow-y-auto border-r border-gray-700 p-4">
           <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">
-            フェーズ
+            クエスト
           </h2>
-          
+
           <div className="space-y-2">
+            {/* はじめに */}
+            <div className="rounded-lg overflow-hidden">
+              <button
+                onClick={() => {
+                  setShowIntroSection(true);
+                  setExpandedPhase(null);
+                  setExpandedStepId(null);
+                }}
+                className={`w-full flex items-center gap-3 p-3 transition-all ${
+                  showIntroSection ? 'bg-yellow-900/50 border border-yellow-500/50' : 'bg-gray-750 hover:bg-gray-700'
+                }`}
+              >
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-yellow-500 to-orange-500 flex items-center justify-center">
+                  <span className="text-lg">📖</span>
+                </div>
+                <div className="flex-1 text-left">
+                  <div className="font-medium text-yellow-400">はじめに</div>
+                  <div className="text-xs text-gray-400">冒険の始まり</div>
+                </div>
+                {showIntroSection && <span className="text-yellow-400">▶</span>}
+              </button>
+            </div>
+
+            {/* フェーズ一覧 */}
             {phases.map((phase) => {
               const Icon = phase.icon;
               const completedSteps = phase.steps.filter(s => s.status === 'completed').length;
@@ -1838,7 +1738,10 @@ export default function Dashboard() {
                 <div key={phase.id} className="rounded-lg overflow-hidden">
                   {/* フェーズヘッダー */}
                   <button
-                    onClick={() => setExpandedPhase(isExpanded ? null : phase.id)}
+                    onClick={() => {
+                      setExpandedPhase(isExpanded ? null : phase.id);
+                      setShowIntroSection(false);
+                    }}
                     className={`w-full flex items-center gap-3 p-3 transition-all ${
                       isExpanded ? 'bg-gray-700' : 'bg-gray-750 hover:bg-gray-700'
                     }`}
@@ -2041,8 +1944,108 @@ export default function Dashboard() {
         </aside>
 
         {/* メインコンテンツ */}
-        <main className="flex-1 p-6">
-          {showPatterns ? (
+        <main className="flex-1 p-6 overflow-y-auto max-h-screen">
+          {showIntroSection ? (
+            /* はじめに（イントロ）セクション */
+            <div className="max-w-3xl mx-auto">
+              {/* RPG風タイトル */}
+              <div className="text-center mb-8">
+                <div className="inline-block bg-gradient-to-br from-gray-800 to-gray-900 px-8 py-4 rounded-lg border-4 border-yellow-600 shadow-2xl">
+                  <h1 className="pixel-font text-yellow-400 text-xl mb-2">〜 副業クエスト 〜</h1>
+                  <p className="text-gray-400 text-sm">Threads × 楽天アフィリエイト</p>
+                </div>
+              </div>
+
+              {/* メインコンテンツ */}
+              <div className="space-y-6">
+                {/* 🎮 冒険の始まり */}
+                <div className="bg-gray-800 rounded-lg p-6 border border-gray-700 shadow-lg">
+                  <h2 className="flex items-center gap-2 text-xl font-bold mb-4">
+                    <span className="text-2xl">🎮</span>
+                    <span className="text-yellow-400">冒険の始まり</span>
+                  </h2>
+                  <div className="space-y-3 text-gray-300 leading-relaxed">
+                    <p>ようこそ、勇者よ。</p>
+                    <p>
+                      これから<span className="text-yellow-400 font-bold">スレッズ</span>と
+                      <span className="text-yellow-400 font-bold">楽天アフィリエイト</span>を使った
+                      副業の旅が始まります。
+                    </p>
+                    <p className="text-gray-400 text-sm">
+                      もちろん、いきなり玄人向けの設定から始めることもできます。
+                      でも、初めての冒険なら...まずはこのガイドに従ってみてください。
+                    </p>
+                  </div>
+                </div>
+
+                {/* 💡 初心者へのおすすめ */}
+                <div className="bg-gray-800 rounded-lg p-6 border border-gray-700 shadow-lg">
+                  <h2 className="flex items-center gap-2 text-xl font-bold mb-4">
+                    <span className="text-2xl">💡</span>
+                    <span className="text-blue-400">初心者へのおすすめ</span>
+                  </h2>
+                  <div className="space-y-3 text-gray-300 leading-relaxed">
+                    <p>
+                      最初の武器として選ぶべきは、
+                      <span className="text-blue-400 font-bold">「見た目で伝わる」</span>ジャンルです。
+                    </p>
+                    <p>
+                      伝えたいことの<span className="text-yellow-400 font-bold">80%が画像で伝わる</span>なら、
+                      難しい言葉を考えなくても大丈夫。
+                    </p>
+                    <div className="bg-blue-900/30 rounded-lg p-4 border border-blue-500/30 mt-4">
+                      <p className="text-blue-300 text-sm">
+                        📷 インテリア、ファッション、ガジェットなど...<br/>
+                        写真を見ただけで「いいな」と思えるものがおすすめです。
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* ⭐ 強みを活かす */}
+                <div className="bg-gray-800 rounded-lg p-6 border border-gray-700 shadow-lg">
+                  <h2 className="flex items-center gap-2 text-xl font-bold mb-4">
+                    <span className="text-2xl">⭐</span>
+                    <span className="text-purple-400">強みを活かす</span>
+                  </h2>
+                  <div className="space-y-3 text-gray-300 leading-relaxed">
+                    <p>そしてもう一つ大切なこと。</p>
+                    <p>
+                      あなたが<span className="text-purple-400 font-bold">好きなこと</span>、
+                      <span className="text-purple-400 font-bold">興味があること</span>を選ぶと、
+                      自然と強みになります。
+                    </p>
+                    <p className="text-gray-400 text-sm">
+                      毎日投稿するものだから、楽しみながら続けられることが一番の武器です。
+                    </p>
+                  </div>
+                </div>
+
+                {/* 次のステップへ */}
+                <div className="text-center pt-4">
+                  <button
+                    onClick={() => {
+                      setShowIntroSection(false);
+                      setExpandedPhase(0);
+                      // 達成演出
+                      setAchievement({ message: '🗡️ 冒険の始まりだ！', type: 'complete' });
+                      setTimeout(() => setAchievement(null), 2000);
+                    }}
+                    className="group relative px-12 py-4 bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-500 hover:to-orange-500 rounded-lg font-bold text-xl shadow-lg transition-all duration-300 hover:scale-105 border-2 border-yellow-400"
+                  >
+                    <span className="flex items-center gap-3">
+                      <span className="pixel-font text-sm">▶</span>
+                      準備を始める
+                      <span className="text-2xl group-hover:translate-x-1 transition-transform">⚔️</span>
+                    </span>
+                  </button>
+                  <p className="text-gray-500 text-sm mt-4">
+                    左のメニューから「Phase 0: 準備」へ進みます
+                  </p>
+                </div>
+              </div>
+            </div>
+          ) : showPatterns ? (
             /* 投稿パターン表示 */
             <div>
               <h2 className="text-2xl font-bold mb-2">投稿6パターン（野球理論）</h2>
@@ -2565,8 +2568,6 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
-      )}
-      </>
       )}
     </div>
   );
