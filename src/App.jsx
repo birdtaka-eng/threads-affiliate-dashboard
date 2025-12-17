@@ -1654,8 +1654,16 @@ export default function Dashboard() {
         {/* RPG風プログレスバー */}
         <div className="mt-4">
           <div className="flex items-center gap-3">
-            {/* レベル表示 */}
-            <div className="flex items-center gap-2">
+            {/* レベル表示（クリックで達成演出テスト） */}
+            <div
+              className="flex items-center gap-2 cursor-pointer hover:scale-110 transition-transform"
+              onClick={() => {
+                const messages = ['🎮 QUEST CLEAR!', '⭐ LEVEL UP!', '🏆 MISSION COMPLETE!', '✨ NICE WORK!', '🌟 GREAT JOB!'];
+                setAchievement({ message: messages[Math.floor(Math.random() * messages.length)], type: 'complete' });
+                setTimeout(() => setAchievement(null), 2000);
+              }}
+              title="クリックで達成演出テスト"
+            >
               <span className="pixel-font text-yellow-400 text-xs">LV.</span>
               <span className="pixel-font text-yellow-300 text-lg">{Math.floor(calculateProgress() / 10) + 1}</span>
             </div>
