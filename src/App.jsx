@@ -6,29 +6,37 @@ const stepFormConfigs = {
   '0-1': {
     fields: [
       {
-        id: 'hasAccount',
-        label: '楽天会員アカウントを持っている',
+        id: 'rakutenLogin',
+        label: '楽天アカウントでログイン',
         type: 'checkbox',
-        question: '楽天で買い物したことはありますか？',
-        explanation: '楽天会員アカウントは楽天アフィリエイトの登録に必要です。普段楽天で買い物している人は既に持っています。'
+        question: '楽天のサイトにログインできますか？',
+        explanation: '楽天で買い物したことがあれば、そのアカウントでOK！\n持っていない場合は、下のリンクから新規登録してください。',
+        link: {
+          url: 'https://www.rakuten.co.jp/',
+          text: '🔗 楽天市場を開く'
+        }
       },
       {
-        id: 'registered',
-        label: '楽天アフィリエイトに登録完了',
+        id: 'affiliateRegistered',
+        label: '楽天アフィリ公式サイトで登録',
         type: 'checkbox',
-        question: '楽天アフィリエイトの登録ページで登録しましたか？',
-        explanation: '審査なしで即日利用可能です。楽天会員アカウントでログインして、利用規約に同意するだけでOK。'
+        question: '楽天アフィリエイトに登録しましたか？',
+        explanation: '登録はとってもカンタン！\n\n📝 登録手順：\n1. 下のリンクから公式サイトへ\n2. 「今すぐ登録」をクリック\n3. 楽天アカウントでログイン\n4. 利用規約に同意して完了！\n\n✨ 審査なし・即日利用OK',
+        link: {
+          url: 'https://affiliate.rakuten.co.jp/',
+          text: '🔗 楽天アフィリエイト公式サイトを開く'
+        }
       },
       {
         id: 'affiliateId',
-        label: 'アフィリエイトID',
+        label: 'アフィリエイトIDをメモ',
         type: 'text',
         placeholder: '例: 12345678',
         question: '登録後に発行されたIDは何ですか？',
-        explanation: 'このIDがあなた専用のアフィリエイトリンクを作るために必要です。管理画面の「サイト情報」で確認できます。'
+        explanation: '登録が完了すると、あなた専用のIDが発行されます。\n\n📍 確認方法：\n楽天アフィリエイト管理画面 → 「サイト情報」で確認できます。\n\nこのIDは後で使うので、ここにメモしておきましょう！'
       },
     ],
-    completionCheck: (data) => data?.registered && data?.affiliateId,
+    completionCheck: (data) => data?.rakutenLogin && data?.affiliateRegistered && data?.affiliateId,
   },
   '0-2': {
     fields: [
@@ -1300,7 +1308,19 @@ export default function Dashboard() {
         <X className="w-4 h-4" />
       </button>
       <div className="pr-6">
-        <p className="text-blue-200 text-sm leading-relaxed">{field.explanation}</p>
+        <p className="text-blue-200 text-sm leading-relaxed whitespace-pre-line">{field.explanation}</p>
+        {/* リンクがある場合は表示 */}
+        {field.link && (
+          <a
+            href={field.link.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-3 inline-flex items-center gap-2 px-4 py-2 bg-yellow-600 hover:bg-yellow-500 text-white rounded-lg text-sm font-medium transition-all"
+          >
+            <ExternalLink className="w-4 h-4" />
+            {field.link.text}
+          </a>
+        )}
       </div>
     </div>
   );
@@ -1791,12 +1811,28 @@ export default function Dashboard() {
                               }`}
                             >
                               <StatusIcon status={step.status} />
-                              <span className={`text-sm flex-1 text-left ${
-                                step.important ? 'text-yellow-400 font-medium' : ''
-                              }`}>
-                                {step.name}
-                                {step.important && ' ⭐'}
-                              </span>
+                              <div className="flex-1 text-left">
+                                <span className={`text-sm ${
+                                  step.important ? 'text-yellow-400 font-medium' : ''
+                                }`}>
+                                  {step.name}
+                                  {step.important && ' ⭐'}
+                                </span>
+                                {/* 達成項目を表示 */}
+                                {config && Object.keys(stepData).length > 0 && (
+                                  <div className="flex flex-wrap gap-1 mt-1">
+                                    {config.fields.filter(f => {
+                                      if (f.type === 'checkbox') return stepData[f.id] === true;
+                                      return stepData[f.id] && stepData[f.id].toString().trim() !== '';
+                                    }).map(f => (
+                                      <span key={f.id} className="text-xs bg-green-600/30 text-green-400 px-1.5 py-0.5 rounded flex items-center gap-1">
+                                        <Check className="w-3 h-3" />
+                                        {f.label.length > 10 ? f.label.substring(0, 10) + '...' : f.label}
+                                      </span>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
                               {step.hasAI && (
                                 <span className="text-xs bg-purple-600/30 text-purple-400 px-1.5 py-0.5 rounded">
                                   AI
