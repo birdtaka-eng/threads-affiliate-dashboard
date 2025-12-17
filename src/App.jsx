@@ -1109,6 +1109,7 @@ export default function Dashboard() {
     return saved !== null ? JSON.parse(saved) : true; // デフォルトON
   });
   const [openExplanation, setOpenExplanation] = useState(null); // 開いている説明のfieldId
+  const [achievement, setAchievement] = useState(null); // 達成ポップアップ { message, type }
 
   // ユーザー入力データ
   const [userData, setUserData] = useState(() => {
@@ -1215,6 +1216,20 @@ export default function Dashboard() {
     updateStepStatus(stepId, 'completed');
     unlockNextStep(stepId);
     setExpandedStepId(null); // パネルを閉じる
+
+    // 達成ポップアップを表示
+    const messages = [
+      '🎮 QUEST CLEAR!',
+      '⭐ LEVEL UP!',
+      '🏆 MISSION COMPLETE!',
+      '✨ NICE WORK!',
+      '🌟 GREAT JOB!',
+    ];
+    const randomMessage = messages[Math.floor(Math.random() * messages.length)];
+    setAchievement({ message: randomMessage, type: 'complete' });
+
+    // 2秒後に非表示
+    setTimeout(() => setAchievement(null), 2000);
   };
 
   // ステップをスキップする
@@ -1249,13 +1264,27 @@ export default function Dashboard() {
   const StatusIcon = ({ status }) => {
     switch (status) {
       case 'completed':
-        return <Check className="w-5 h-5 text-green-500" />;
+        return (
+          <div className="relative">
+            <Check className="w-5 h-5 text-green-500 check-bounce" />
+            <span className="absolute -top-1 -right-1 text-[8px]">⭐</span>
+          </div>
+        );
       case 'skipped':
         return <SkipForward className="w-5 h-5 text-yellow-500" />;
       case 'locked':
-        return <Lock className="w-5 h-5 text-gray-400" />;
+        return (
+          <div className="relative opacity-50">
+            <Lock className="w-5 h-5 text-gray-400" />
+            <span className="absolute -top-0.5 -right-0.5 text-[8px]">🔒</span>
+          </div>
+        );
       default:
-        return <div className="w-5 h-5 rounded-full border-2 border-blue-500" />;
+        return (
+          <div className="w-5 h-5 rounded-full border-2 border-blue-500 flex items-center justify-center">
+            <span className="text-[8px] text-blue-400">!</span>
+          </div>
+        );
     }
   };
 
@@ -1512,14 +1541,39 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gray-900 text-white">
+      {/* 達成ポップアップ */}
+      {achievement && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none">
+          <div className="achievement-popup bg-gradient-to-br from-yellow-500 via-orange-500 to-red-500 px-8 py-6 rounded-lg shadow-2xl border-4 border-yellow-300">
+            <div className="achievement-shine absolute inset-0 rounded-lg" />
+            <div className="relative">
+              <div className="pixel-font text-white text-2xl text-center drop-shadow-lg">
+                {achievement.message}
+              </div>
+              <div className="flex justify-center mt-2 gap-1">
+                {[...Array(5)].map((_, i) => (
+                  <span key={i} className="text-yellow-200 sparkle" style={{ animationDelay: `${i * 0.1}s` }}>✦</span>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ヘッダー */}
       <header className="bg-gray-800 border-b border-gray-700 px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Sparkles className="w-8 h-8 text-yellow-400" />
+            <div className="relative">
+              <Sparkles className="w-8 h-8 text-yellow-400" />
+              <span className="absolute -top-1 -right-1 text-xs">✨</span>
+            </div>
             <div>
-              <h1 className="text-xl font-bold">Threads × 楽天アフィリ</h1>
-              <p className="text-sm text-gray-400">自動化システム</p>
+              <h1 className="text-xl font-bold flex items-center gap-2">
+                <span className="pixel-font text-yellow-400 text-sm">▶</span>
+                Threads × 楽天アフィリ
+              </h1>
+              <p className="text-sm text-gray-400">〜 副業クエスト 〜</p>
             </div>
           </div>
           
@@ -1597,17 +1651,36 @@ export default function Dashboard() {
           </button>
         </div>
         
-        {/* プログレスバー */}
+        {/* RPG風プログレスバー */}
         <div className="mt-4">
-          <div className="flex items-center justify-between text-sm mb-1">
-            <span className="text-gray-400">全体進捗</span>
-            <span className="text-blue-400 font-medium">{calculateProgress()}%</span>
-          </div>
-          <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
-            <div 
-              className="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-500"
-              style={{ width: `${calculateProgress()}%` }}
-            />
+          <div className="flex items-center gap-3">
+            {/* レベル表示 */}
+            <div className="flex items-center gap-2">
+              <span className="pixel-font text-yellow-400 text-xs">LV.</span>
+              <span className="pixel-font text-yellow-300 text-lg">{Math.floor(calculateProgress() / 10) + 1}</span>
+            </div>
+
+            {/* EXPバー */}
+            <div className="flex-1">
+              <div className="flex items-center justify-between text-xs mb-1">
+                <span className="text-gray-400 flex items-center gap-1">
+                  <span className="text-yellow-500">⚔️</span> EXP
+                </span>
+                <span className="pixel-font text-yellow-400 text-[10px]">{calculateProgress()}%</span>
+              </div>
+              <div className="rpg-bar-container h-4">
+                <div
+                  className="rpg-bar-fill h-full transition-all duration-500"
+                  style={{ width: `${calculateProgress()}%` }}
+                />
+              </div>
+            </div>
+
+            {/* 次のレベルまで */}
+            <div className="text-xs text-gray-500">
+              <span className="text-gray-400">NEXT</span>
+              <span className="pixel-font text-[10px] text-yellow-500 ml-1">{10 - (calculateProgress() % 10)}%</span>
+            </div>
           </div>
         </div>
       </header>

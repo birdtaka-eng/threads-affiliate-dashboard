@@ -1,1 +1,102 @@
+/* ドット絵風フォント（ピクセル感を出す） */
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
 @import "tailwindcss";
+
+.pixel-font {
+  font-family: 'Press Start 2P', cursive;
+}
+
+/* RPG風EXPバー */
+.rpg-bar-container {
+  background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+  border: 3px solid #4a4a6a;
+  border-radius: 2px;
+  box-shadow:
+    inset 0 2px 4px rgba(0,0,0,0.5),
+    0 0 0 1px #0a0a1a;
+  padding: 3px;
+}
+
+.rpg-bar-fill {
+  background: linear-gradient(180deg, #ffd700 0%, #ff8c00 50%, #ff6600 100%);
+  box-shadow:
+    inset 0 -2px 4px rgba(0,0,0,0.3),
+    inset 0 2px 4px rgba(255,255,255,0.3);
+  animation: rpg-bar-shine 2s ease-in-out infinite;
+}
+
+@keyframes rpg-bar-shine {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(1.2); }
+}
+
+/* 達成アニメーション */
+@keyframes achievement-popup {
+  0% {
+    transform: scale(0) rotate(-10deg);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.2) rotate(5deg);
+    opacity: 1;
+  }
+  70% {
+    transform: scale(0.9) rotate(-2deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+}
+
+@keyframes achievement-shine {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+@keyframes pixel-sparkle {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.5); }
+}
+
+.achievement-popup {
+  animation: achievement-popup 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+}
+
+.achievement-shine {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255,255,255,0.4) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: achievement-shine 1.5s ease-in-out infinite;
+}
+
+/* ピクセル風ボーダー */
+.pixel-border {
+  box-shadow:
+    2px 0 0 0 currentColor,
+    -2px 0 0 0 currentColor,
+    0 2px 0 0 currentColor,
+    0 -2px 0 0 currentColor;
+}
+
+/* レベルアップ時のキラキラ */
+.sparkle {
+  animation: pixel-sparkle 0.3s ease-in-out;
+}
+
+/* 完了チェックマークのアニメーション */
+@keyframes check-bounce {
+  0% { transform: scale(0); }
+  50% { transform: scale(1.3); }
+  70% { transform: scale(0.9); }
+  100% { transform: scale(1); }
+}
+
+.check-bounce {
+  animation: check-bounce 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
