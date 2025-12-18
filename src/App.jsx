@@ -1125,6 +1125,7 @@ export default function Dashboard() {
   const [showSafetyInfo, setShowSafetyInfo] = useState(false);
   const [activeTab, setActiveTab] = useState('tasks'); // 'tasks' or 'accounts'
   const [expandedStepId, setExpandedStepId] = useState(null); // 展開中のステップID
+  const [selectedFieldId, setSelectedFieldId] = useState(null); // 選択中のフィールドID（クリックで下段表示用）
   const [showHints, setShowHints] = useState(() => {
     const saved = localStorage.getItem('threads-affiliate-showHints');
     return saved !== null ? JSON.parse(saved) : true; // デフォルトON
@@ -1812,6 +1813,7 @@ export default function Dashboard() {
                                 if (step.status !== 'locked' || mode === 'expert') {
                                   setExpandedStepId(isStepExpanded ? null : step.id);
                                   setSelectedStep(step);
+                                  setSelectedFieldId(null); // フィールド選択をリセット
                                 }
                               }}
                               disabled={step.status === 'locked' && mode === 'beginner'}
@@ -1880,10 +1882,139 @@ export default function Dashboard() {
                                   </div>
                                 ))}
 
-                                {/* フォームフィールド */}
-                                {config.fields.map(field => (
-                                  <FormField key={field.id} field={field} stepId={step.id} data={stepData} />
-                                ))}
+                                {/* やることリスト（クリック可能） */}
+                                <div className="space-y-2">
+                                  {config.fields.map((field, idx) => {
+                                    // showIf条件をチェック
+                                    if (field.showIf && !field.showIf(stepData)) return null;
+
+                                    const fieldKey = `${step.id}-${field.id}`;
+                                    const isSelected = selectedFieldId === fieldKey;
+                                    const value = stepData?.[field.id];
+                                    const isCompleted = field.type === 'checkbox'
+                                      ? value === true
+                                      : value && value.toString().trim() !== '';
+
+                                    return (
+                                      <div key={field.id}>
+                                        {/* クリック可能な項目 */}
+                                        <button
+                                          onClick={() => setSelectedFieldId(isSelected ? null : fieldKey)}
+                                          className={`w-full flex items-center gap-3 p-3 rounded-lg transition-all text-left ${
+                                            isSelected
+                                              ? 'bg-blue-600/30 border border-blue-500'
+                                              : 'bg-gray-700/50 hover:bg-gray-700 border border-transparent'
+                                          }`}
+                                        >
+                                          <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${
+                                            isCompleted ? 'bg-green-500 text-white' : 'bg-gray-600 text-gray-300'
+                                          }`}>
+                                            {isCompleted ? <Check className="w-4 h-4" /> : idx + 1}
+                                          </span>
+                                          <span className={`flex-1 text-sm ${isCompleted ? 'text-green-400' : 'text-gray-200'}`}>
+                                            {field.label}
+                                          </span>
+                                          <ChevronRight className={`w-4 h-4 text-gray-400 transition-transform flex-shrink-0 ${isSelected ? 'rotate-90' : ''}`} />
+                                        </button>
+
+                                        {/* 下段：選択時に作業内容を表示 */}
+                                        {isSelected && (
+                                          <div className="mt-2 ml-9 p-4 bg-gray-900/50 rounded-lg border border-gray-600">
+                                            {/* リンクがある場合 */}
+                                            {field.link && (
+                                              <a
+                                                href={field.link.url}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="inline-flex items-center gap-2 px-4 py-2 bg-yellow-600 hover:bg-yellow-500 text-white rounded-lg text-sm font-medium transition-all mb-3"
+                                              >
+                                                <ExternalLink className="w-4 h-4" />
+                                                {field.link.text}
+                                              </a>
+                                            )}
+
+                                            {/* 説明文 */}
+                                            {field.explanation && (
+                                              <p className="text-sm text-gray-300 whitespace-pre-line mb-3">{field.explanation}</p>
+                                            )}
+
+                                            {/* チェックボックス */}
+                                            {field.type === 'checkbox' && (
+                                              <label className="flex items-center gap-3 p-2 bg-gray-800 rounded cursor-pointer hover:bg-gray-750">
+                                                <input
+                                                  type="checkbox"
+                                                  checked={!!value}
+                                                  onChange={(e) => updateUserData(step.id, field.id, e.target.checked)}
+                                                  className="w-5 h-5 rounded border-gray-500 text-green-500 focus:ring-green-500"
+                                                />
+                                                <span className="text-sm text-gray-200">完了したらチェック</span>
+                                              </label>
+                                            )}
+
+                                            {/* テキスト入力 */}
+                                            {field.type === 'text' && (
+                                              <div className="space-y-2">
+                                                {field.question && (
+                                                  <label className="block text-sm text-yellow-300">{field.question}</label>
+                                                )}
+                                                <input
+                                                  type="text"
+                                                  value={value || ''}
+                                                  onChange={(e) => updateUserData(step.id, field.id, e.target.value)}
+                                                  placeholder={field.placeholder}
+                                                  className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                                                />
+                                              </div>
+                                            )}
+
+                                            {/* テキストエリア */}
+                                            {field.type === 'textarea' && (
+                                              <div className="space-y-2">
+                                                {field.question && (
+                                                  <label className="block text-sm text-yellow-300">{field.question}</label>
+                                                )}
+                                                <textarea
+                                                  value={value || ''}
+                                                  onChange={(e) => updateUserData(step.id, field.id, e.target.value)}
+                                                  placeholder={field.placeholder}
+                                                  rows={field.rows || 3}
+                                                  className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 resize-none"
+                                                />
+                                              </div>
+                                            )}
+
+                                            {/* セレクト */}
+                                            {field.type === 'select' && (
+                                              <div className="space-y-2">
+                                                {field.question && (
+                                                  <label className="block text-sm text-yellow-300">{field.question}</label>
+                                                )}
+                                                <select
+                                                  value={value || ''}
+                                                  onChange={(e) => updateUserData(step.id, field.id, e.target.value)}
+                                                  className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                                                >
+                                                  <option value="">選択してください</option>
+                                                  {field.options?.map(opt => (
+                                                    <option key={opt.value} value={opt.value}>
+                                                      {opt.label} {opt.difficulty && `(${opt.difficulty})`}
+                                                    </option>
+                                                  ))}
+                                                </select>
+                                                {/* 選択したオプションの警告表示 */}
+                                                {value && field.options?.find(o => o.value === value)?.warning && (
+                                                  <div className="p-2 bg-yellow-900/30 border border-yellow-500/50 rounded text-sm text-yellow-400">
+                                                    ⚠️ {field.options.find(o => o.value === value).warning}
+                                                  </div>
+                                                )}
+                                              </div>
+                                            )}
+                                          </div>
+                                        )}
+                                      </div>
+                                    );
+                                  })}
+                                </div>
 
                                 {/* 完了状態 & アクションボタン */}
                                 <div className="pt-2 border-t border-gray-700">
