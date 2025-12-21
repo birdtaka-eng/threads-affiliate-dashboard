@@ -15,7 +15,8 @@
       "Bash(if not exist \"src\\\\data\" mkdir \"src\\\\data\")",
       "Bash(if not exist \"src\\\\components\" mkdir \"src\\\\components\")",
       "Bash(wc:*)",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "Bash(node update-target.cjs:*)"
     ]
   }
 }
