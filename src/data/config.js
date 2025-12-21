@@ -168,46 +168,83 @@ export const stepFormConfigs = {
     completionCheck: (data) => data?.targetAge && data?.targetGender && data?.oneLiner,
   },
   '1-3': {
+    hasAutoGenerate: true,
     fields: [
+      // キャラ設定セクション
+      {
+        id: 'characterName',
+        label: '名前',
+        type: 'text',
+        placeholder: '例: みゆ、ゆうこ、りな',
+        question: 'あなたの活動名は？（ひらがな/カタカナ推奨）',
+        explanation: '覚えやすい2-4文字がおすすめ。ひらがなかカタカナが親しみやすいです。',
+        section: 'character'
+      },
+      {
+        id: 'personality',
+        label: '性格',
+        type: 'select',
+        question: 'どんな性格で発信しますか？',
+        explanation: '投稿の雰囲気を決める大切な要素です。自分に近いものを選びましょう。',
+        options: [
+          { value: 'gentle', label: 'やさしい' },
+          { value: 'sharp', label: '毒舌' },
+          { value: 'calm', label: '冷静' },
+          { value: 'passionate', label: '熱血' },
+        ],
+        section: 'character'
+      },
+      {
+        id: 'speakingStyle',
+        label: '話し方',
+        type: 'select',
+        question: 'どんな話し方で発信しますか？',
+        explanation: '親しみやすさと信頼感のバランスを考えて選びましょう。',
+        options: [
+          { value: 'polite', label: '敬語' },
+          { value: 'casual', label: 'タメ口' },
+          { value: 'kansai', label: '関西弁' },
+          { value: 'standard', label: '標準語' },
+        ],
+        section: 'character'
+      },
+      {
+        id: 'empathyPoint',
+        label: '共感ポイント',
+        type: 'text',
+        placeholder: '例: 2児育児中でもキレイでいたい',
+        question: 'あなたの共感ポイントは？',
+        explanation: 'フォロワーが「私と同じ！」と感じるポイントを入力してください。',
+        section: 'character'
+      },
+      // 生成結果セクション
       {
         id: 'accountName',
         label: 'アカウント名',
         type: 'text',
         placeholder: '例: みゆ｜暮らしの雑貨',
-        question: 'あなたの名前＋ジャンルを組み合わせてみましょう',
-        explanation: '覚えやすく、ジャンルが伝わる名前がベスト。「名前｜ジャンル」の形式が人気です。'
+        question: 'アカウント名',
+        explanation: '自動生成後に編集できます。',
+        section: 'result'
       },
       {
-        id: 'profileTitle',
-        label: '肩書き（1行）',
+        id: 'userId',
+        label: 'ユーザーID',
         type: 'text',
-        placeholder: '例: 30代｜インテリア好き',
-        question: 'あなたの年代と興味を一行で',
-        explanation: '権威性がなくても大丈夫。「〇〇代｜〇〇好き」でOK。'
-      },
-      {
-        id: 'profileValue',
-        label: '提供価値',
-        type: 'text',
-        placeholder: '例: 毎日おしゃれアイテム紹介',
-        question: 'フォローすると何が見れますか？',
-        explanation: '「毎日〇〇紹介」「週3で〇〇情報」など、具体的に。'
-      },
-      {
-        id: 'profileCTA',
-        label: 'CTA（行動喚起）',
-        type: 'text',
-        placeholder: '例: フォローで見逃し防止',
-        question: 'フォローを促す一言は？',
-        explanation: '「フォローで見逃し防止」「いいねで応援」など。'
+        placeholder: '例: @miyu_zakka',
+        question: 'ユーザーID',
+        explanation: '自動生成後に編集できます。',
+        section: 'result'
       },
       {
         id: 'fullProfile',
-        label: 'プロフィール全文',
+        label: 'プロフィール文',
         type: 'textarea',
-        placeholder: '上記を組み合わせて完成させましょう',
-        question: '上の内容を組み合わせてプロフィールを完成させましょう',
-        explanation: '絵文字は1-2個まで。シンプルに、3秒で価値が伝わるように。'
+        placeholder: 'プロフィール文がここに生成されます',
+        question: 'プロフィール文',
+        explanation: '自動生成後に編集できます。絵文字は1-2個まで。',
+        rows: 4,
+        section: 'result'
       },
     ],
     warnings: [
