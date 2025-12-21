@@ -11,7 +11,11 @@
       "Bash(node update-render.cjs:*)",
       "Bash(node fix-input.cjs:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(if not exist \"src\\\\data\" mkdir \"src\\\\data\")",
+      "Bash(if not exist \"src\\\\components\" mkdir \"src\\\\components\")",
+      "Bash(wc:*)",
+      "Bash(npm run build:*)"
     ]
   }
 }
