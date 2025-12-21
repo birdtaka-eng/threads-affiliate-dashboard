@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git checkout:*)",
+      "Bash(node update-research.js:*)",
+      "Bash(node update-research.cjs:*)",
+      "Bash(npm run dev:*)",
+      "Bash(git branch:*)",
+      "Bash(node -e:*)",
+      "Bash(node update-1-1.cjs:*)",
+      "Bash(node update-render.cjs:*)",
+      "Bash(node fix-input.cjs:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
+    ]
+  }
+}

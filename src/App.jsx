@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { ChevronRight, ChevronDown, Check, Lock, Play, Settings, User, Search, FileText, Calendar, BarChart3, Zap, Shield, AlertTriangle, Sparkles, Target, TrendingUp, Box, Clock, LineChart, ExternalLink, AlertCircle, XCircle, SkipForward, RotateCcw, Trash2, Plus, Edit3, Save, Key, HelpCircle, X, Eye, EyeOff } from 'lucide-react';
 
 // 各ステップのフォーム設定（RPG風：説明・質問付き）
@@ -111,38 +111,14 @@ const stepFormConfigs = {
     fields: [
       {
         id: 'selectedGenre',
-        label: 'ジャンルを選択',
-        type: 'select',
-        question: 'どんな商品を紹介したいですか？',
-        explanation: '初心者は「見た目が映える商品」がオススメ！画像だけで興味を引けるので、難しい言葉を考えなくてOK。インテリア・ファッション・ガジェットは画像映え◎で言葉不要。コスメ・サプリは言葉での説得が必要なので中〜上級者向け。',
-        options: [
-          { value: 'interior', label: 'インテリア・雑貨', difficulty: '初心者向け', warning: null },
-          { value: 'fashion', label: 'ファッション', difficulty: '初心者向け', warning: null },
-          { value: 'gadget', label: 'ガジェット', difficulty: '初心者向け', warning: null },
-          { value: 'cosme', label: 'コスメ・美容', difficulty: '中級者向け', warning: '言葉での説得力が必要です' },
-          { value: 'supplement', label: 'サプリ・健康', difficulty: '上級者向け', warning: '言葉での説得が必須。初心者には難しいジャンルです' },
-          { value: 'other', label: 'その他', difficulty: '-', warning: null },
-        ],
-      },
-      {
-        id: 'customGenre',
-        label: 'その他の場合、具体的に',
+        label: '紹介したい商品ジャンル',
         type: 'text',
-        placeholder: '具体的なジャンル名',
-        showIf: (data) => data?.selectedGenre === 'other',
-        question: '具体的にどんなジャンルですか？',
-        explanation: '「見た目が大切なモノ」かどうかを考えてみてください。'
-      },
-      {
-        id: 'genreReason',
-        label: 'このジャンルを選んだ理由',
-        type: 'textarea',
-        placeholder: '例: 自分も好きで詳しいから、毎日見ても飽きないから',
-        question: 'なぜこのジャンルに興味がありますか？',
-        explanation: 'SNS副業は継続が1番重要。楽しみながら投稿できるものを選ぶと続けやすいです。好きなことなら知識ゼロでもOK！'
+        placeholder: '例: インテリア雑貨、ファッション小物',
+        question: 'どんな商品を紹介したいですか？',
+        explanation: 'あなたが興味を持っている商品ジャンルを入力してください。2つ程度が上限です。'
       },
     ],
-    completionCheck: (data) => data?.selectedGenre && (data?.selectedGenre !== 'other' || data?.customGenre),
+    completionCheck: (data) => data?.selectedGenre,
   },
   '1-2': {
     fields: [
@@ -831,22 +807,42 @@ const stepDetails = {
   },
   '1-1': {
     title: 'ジャンル選定',
-    why: 'ジャンル選びが最重要。「見た目が映える商品」を選べば、難しい言葉を考えなくても画像だけで興味を引ける！言葉が不要な有形コンテンツから始めるのが最短ルート。',
-    steps: [
-      '「見た目が大切なモノ」を紹介するジャンルを選ぶ',
-      '楽天ランキングで需要を確認',
-      '同ジャンルの発信者をリサーチ（伸びてるか確認）',
-      '最も「投稿し続けられそう」なものを選択',
-    ],
-    categories: [
-      { name: 'インテリア・雑貨', difficulty: '初心者向け', reason: '画像映え◎ 言葉不要' },
-      { name: 'ファッション', difficulty: '初心者向け', reason: '画像映え◎ 言葉不要' },
-      { name: 'ガジェット', difficulty: '初心者向け', reason: '画像映え◎ 言葉不要' },
-      { name: 'コスメ・美容', difficulty: '中級者向け', reason: '言葉での説得が必要' },
-      { name: 'サプリ・健康', difficulty: '上級者向け', reason: '言葉での説得が必須' },
-    ],
-    tips: '競合が多いジャンル = 需要が高い = 収益も上げやすい。全くビビる必要なし！現在のスレッズは参入者が少ないので、人気ジャンルで広く攻めてOK。',
-    hasAI: true,
+    isLargeText: true,
+    why: `【自己プロデュースの時間です】
+
+１．この設計は何をするところなのか？
+一言で言うなら「自己プロデュース」です。
+
+２．この作業は、テレビ番組で言う所の番組作りであり、あなたはそのプロデューサーです。
+
+３．「番組を作りましょう」となったときに、真っ先に考えるのは「視聴者層」です。
+つまり、だれに届けるのか？が分からないと、番組作りがぶれてしまいます。
+
+４．じつは、楽天アフィリにぴったりな「視聴者層」の答えはすでに出ています。
+答えは、「２０～３０代の女性、主婦、OLさんが中心です。」
+
+５．では、この「２０～３０代の女性、主婦、OLさん」の関心事や日常的に入ってくると嬉しい情報は？
+
+６．その答えもすでにあります。「王道」はこれ：
+・美容
+・育児
+・ファッション(女性・キッズ・男性）
+・暮らし（雑貨、家具、便利グッズ）
+・旅行
+
+７．なにからどう進めて行こうか？と悩む場合はこの５個の「自分個人も関心がある」中から選んでください。
+自分の関心が無いことを、１から作り上げるのは大変ですよね？
+なので、「美容」にさっぱり関心が無いのに、美容ジャンルが稼げそうで進めるのはとてもつらい作業になるので、避けましょう。
+
+また、ジャンル内容は二つ程度を上限にすること。
+あまり、発信内容が広範囲になると、特定の情報が欲しいユーザーさんがフォローしてくれません。
+
+８．好きな事も、関心事も無いなーと悩んでしまう人へ。
+例えば、「子供さんを立派に育て上げた経験がある」方は実は「育児」系にぴったりなんです。
+現在進行形でなくてはダメなんて事はありません。
+「すらすらと語れる内容」があなたの強みであり、ジャンルです。`,
+    steps: [],
+    tips: '',
   },
   '1-2': {
     title: 'コンセプト設計・ターゲット設定',
@@ -1170,7 +1166,7 @@ export default function Dashboard() {
   }, [showHints]);
 
   // ユーザーデータを更新
-  const updateUserData = (stepId, fieldId, value) => {
+  const updateUserData = useCallback((stepId, fieldId, value) => {
     setUserData(prev => ({
       ...prev,
       [stepId]: {
@@ -1178,7 +1174,7 @@ export default function Dashboard() {
         [fieldId]: value,
       }
     }));
-  };
+  }, []);
 
   // ステップのデータをリセット（やり直す）
   const resetStepData = (stepId) => {
@@ -1312,8 +1308,8 @@ export default function Dashboard() {
     }
   };
 
-  // 説明ポップアップコンポーネント
-  const ExplanationPopup = ({ field, onClose }) => (
+  // 説明ポップアップ - レンダー関数版
+  const renderExplanationPopup = (field, onClose) => (
     <div className="mt-2 p-3 bg-blue-900/40 border border-blue-500/50 rounded-lg relative">
       <button
         onClick={onClose}
@@ -1339,8 +1335,8 @@ export default function Dashboard() {
     </div>
   );
 
-  // フォームフィールドレンダリング（RPG風：質問形式）
-  const FormField = ({ field, stepId, data }) => {
+  // フォームフィールドレンダリング（RPG風：質問形式）- レンダー関数版
+  const renderFormField = (field, stepId, data) => {
     const value = data?.[field.id] ?? '';
     const fieldKey = `${stepId}-${field.id}`;
     const isExplanationOpen = openExplanation === fieldKey;
@@ -1402,7 +1398,7 @@ export default function Dashboard() {
               )}
               {value && <Check className="w-4 h-4 text-green-500" />}
             </div>
-            {isExplanationOpen && <ExplanationPopup field={field} onClose={() => setOpenExplanation(null)} />}
+            {isExplanationOpen && renderExplanationPopup(field, () => setOpenExplanation(null))}
           </div>
         );
 
@@ -1410,12 +1406,15 @@ export default function Dashboard() {
         return (
           <div className="space-y-1">
             <QuestionLabel />
-            {isExplanationOpen && <ExplanationPopup field={field} onClose={() => setOpenExplanation(null)} />}
+            {isExplanationOpen && renderExplanationPopup(field, () => setOpenExplanation(null))}
             <input
               type="text"
+              id={`input-${stepId}-${field.id}`}
+              name={`${stepId}-${field.id}`}
               value={value}
               onChange={(e) => updateUserData(stepId, field.id, e.target.value)}
               placeholder={field.placeholder}
+              autoComplete="off"
               className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
             />
             {!showHints && <div className="text-xs text-gray-500">{field.label}</div>}
@@ -1426,7 +1425,7 @@ export default function Dashboard() {
         return (
           <div className="space-y-1">
             <QuestionLabel />
-            {isExplanationOpen && <ExplanationPopup field={field} onClose={() => setOpenExplanation(null)} />}
+            {isExplanationOpen && renderExplanationPopup(field, () => setOpenExplanation(null))}
             <textarea
               value={value}
               onChange={(e) => updateUserData(stepId, field.id, e.target.value)}
@@ -1442,7 +1441,7 @@ export default function Dashboard() {
         return (
           <div className="space-y-1">
             <QuestionLabel />
-            {isExplanationOpen && <ExplanationPopup field={field} onClose={() => setOpenExplanation(null)} />}
+            {isExplanationOpen && renderExplanationPopup(field, () => setOpenExplanation(null))}
             <select
               value={value}
               onChange={(e) => updateUserData(stepId, field.id, e.target.value)}
@@ -1471,7 +1470,7 @@ export default function Dashboard() {
         return (
           <div className="space-y-2">
             <QuestionLabel />
-            {isExplanationOpen && <ExplanationPopup field={field} onClose={() => setOpenExplanation(null)} />}
+            {isExplanationOpen && renderExplanationPopup(field, () => setOpenExplanation(null))}
             <div className="flex items-center gap-3">
               <input
                 type="number"
@@ -1505,8 +1504,8 @@ export default function Dashboard() {
     }
   };
 
-  // ステップフォームのレンダリング
-  const StepForm = ({ stepId }) => {
+  // ステップフォームのレンダリング - レンダー関数版
+  const renderStepForm = (stepId) => {
     const config = stepFormConfigs[stepId];
     const data = userData[stepId] || {};
 
@@ -1544,7 +1543,9 @@ export default function Dashboard() {
 
           <div className="space-y-3">
             {config.fields.map(field => (
-              <FormField key={field.id} field={field} stepId={stepId} data={data} />
+              <React.Fragment key={field.id}>
+                {renderFormField(field, stepId, data)}
+              </React.Fragment>
             ))}
           </div>
 
@@ -1953,15 +1954,19 @@ export default function Dashboard() {
 
                                             {/* テキスト入力 */}
                                             {field.type === 'text' && (
-                                              <div className="space-y-2">
+                                              <div className="space-y-2" onClick={(e) => e.stopPropagation()}>
                                                 {field.question && (
                                                   <label className="block text-sm text-yellow-300">{field.question}</label>
                                                 )}
                                                 <input
                                                   type="text"
+                                                  id={`input-${step.id}-${field.id}`}
+                                                  name={`${step.id}-${field.id}`}
                                                   value={value || ''}
                                                   onChange={(e) => updateUserData(step.id, field.id, e.target.value)}
+                                                  onMouseDown={(e) => e.stopPropagation()}
                                                   placeholder={field.placeholder}
+                                                  autoComplete="off"
                                                   className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                                                 />
                                               </div>
@@ -1974,10 +1979,13 @@ export default function Dashboard() {
                                                   <label className="block text-sm text-yellow-300">{field.question}</label>
                                                 )}
                                                 <textarea
+                                                  id={`textarea-${step.id}-${field.id}`}
+                                                  name={`${step.id}-${field.id}`}
                                                   value={value || ''}
                                                   onChange={(e) => updateUserData(step.id, field.id, e.target.value)}
                                                   placeholder={field.placeholder}
                                                   rows={field.rows || 3}
+                                                  autoComplete="off"
                                                   className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 resize-none"
                                                 />
                                               </div>
@@ -2429,15 +2437,16 @@ export default function Dashboard() {
               {stepDetails[selectedStep.id] && (
                 <div className="space-y-4">
                   {/* なぜこのステップが必要か */}
-                  <div className="bg-blue-900/20 border border-blue-500/30 rounded-xl p-4">
-                    <h3 className="font-semibold text-blue-400 mb-2 flex items-center gap-2">
-                      <Target className="w-4 h-4" />
-                      なぜこのステップが必要？
+                  <div className={`${stepDetails[selectedStep.id].isLargeText ? 'bg-gradient-to-br from-purple-900/30 to-blue-900/20 border-purple-500/30' : 'bg-blue-900/20 border-blue-500/30'} border rounded-xl p-5`}>
+                    <h3 className={`font-bold ${stepDetails[selectedStep.id].isLargeText ? 'text-purple-300 text-lg mb-4' : 'text-blue-400 mb-2'} flex items-center gap-2`}>
+                      <Target className={`${stepDetails[selectedStep.id].isLargeText ? 'w-5 h-5' : 'w-4 h-4'}`} />
+                      {stepDetails[selectedStep.id].isLargeText ? 'ジャンル選定ガイド' : 'なぜこのステップが必要？'}
                     </h3>
-                    <p className="text-gray-300 text-sm">{stepDetails[selectedStep.id].why}</p>
+                    <p className={`text-gray-200 whitespace-pre-line leading-relaxed ${stepDetails[selectedStep.id].isLargeText ? 'text-base' : 'text-sm'}`}>{stepDetails[selectedStep.id].why}</p>
                   </div>
 
                   {/* 手順 */}
+                  {stepDetails[selectedStep.id].steps?.length > 0 && (
                   <div className="bg-gray-800 rounded-xl p-5 border border-gray-700">
                     <h3 className="font-semibold mb-4">やることリスト</h3>
                     <div className="space-y-3">
@@ -2451,8 +2460,10 @@ export default function Dashboard() {
                       ))}
                     </div>
                   </div>
+                  )}
 
                   {/* Tips */}
+                  {stepDetails[selectedStep.id].tips && (
                   <div className="bg-green-900/20 border border-green-500/30 rounded-xl p-4">
                     <h3 className="font-semibold text-green-400 mb-2 flex items-center gap-2">
                       <Sparkles className="w-4 h-4" />
@@ -2460,6 +2471,7 @@ export default function Dashboard() {
                     </h3>
                     <p className="text-gray-300 text-sm">{stepDetails[selectedStep.id].tips}</p>
                   </div>
+                  )}
 
                   {/* 外部リンク */}
                   {stepDetails[selectedStep.id].link && (
@@ -2477,7 +2489,7 @@ export default function Dashboard() {
               )}
 
               {/* インタラクティブフォーム */}
-              <StepForm stepId={selectedStep.id} />
+              {renderStepForm(selectedStep.id)}
 
               {/* アクションボタン */}
               {selectedStep.status === 'pending' && (
