@@ -170,7 +170,7 @@ export const stepFormConfigs = {
   '1-3': {
     hasAutoGenerate: true,
     fields: [
-      // キャラ設定セクション
+      // 入力セクション
       {
         id: 'characterName',
         label: '名前',
@@ -181,31 +181,21 @@ export const stepFormConfigs = {
         section: 'character'
       },
       {
-        id: 'personality',
-        label: '性格',
-        type: 'select',
-        question: 'どんな性格で発信しますか？',
-        explanation: '投稿の雰囲気を決める大切な要素です。自分に近いものを選びましょう。',
-        options: [
-          { value: 'gentle', label: 'やさしい' },
-          { value: 'sharp', label: '毒舌' },
-          { value: 'calm', label: '冷静' },
-          { value: 'passionate', label: '熱血' },
-        ],
+        id: 'title',
+        label: '肩書き',
+        type: 'text',
+        placeholder: '例: 時短コスメの人、雑貨好き主婦',
+        question: 'あなたの肩書きは？',
+        explanation: 'ジャンルが伝わる短い肩書きを入力してください。',
         section: 'character'
       },
       {
-        id: 'speakingStyle',
-        label: '話し方',
-        type: 'select',
-        question: 'どんな話し方で発信しますか？',
-        explanation: '親しみやすさと信頼感のバランスを考えて選びましょう。',
-        options: [
-          { value: 'polite', label: '敬語' },
-          { value: 'casual', label: 'タメ口' },
-          { value: 'kansai', label: '関西弁' },
-          { value: 'standard', label: '標準語' },
-        ],
+        id: 'authority',
+        label: '権威性',
+        type: 'text',
+        placeholder: '例: 毎月5万課金、10年愛用、100個試した',
+        question: 'あなたの権威性は？（任意）',
+        explanation: '信頼性を高める実績や経験を入力してください。なくてもOK。',
         section: 'character'
       },
       {
@@ -217,22 +207,25 @@ export const stepFormConfigs = {
         explanation: 'フォロワーが「私と同じ！」と感じるポイントを入力してください。',
         section: 'character'
       },
+      {
+        id: 'tone',
+        label: 'トーン',
+        type: 'select',
+        question: 'どんな雰囲気で発信しますか？',
+        explanation: '楽しい重視は絵文字多め、真面目重視は絵文字なしになります。',
+        options: [
+          { value: 'fun', label: '楽しい重視（絵文字多め）' },
+          { value: 'serious', label: '真面目重視（絵文字なし）' },
+        ],
+        section: 'character'
+      },
       // 生成結果セクション
       {
         id: 'accountName',
         label: 'アカウント名',
         type: 'text',
-        placeholder: '例: みゆ｜暮らしの雑貨',
+        placeholder: '例: みゆ｜時短コスメの人',
         question: 'アカウント名',
-        explanation: '自動生成後に編集できます。',
-        section: 'result'
-      },
-      {
-        id: 'userId',
-        label: 'ユーザーID',
-        type: 'text',
-        placeholder: '例: @miyu_zakka',
-        question: 'ユーザーID',
         explanation: '自動生成後に編集できます。',
         section: 'result'
       },
@@ -242,8 +235,8 @@ export const stepFormConfigs = {
         type: 'textarea',
         placeholder: 'プロフィール文がここに生成されます',
         question: 'プロフィール文',
-        explanation: '自動生成後に編集できます。絵文字は1-2個まで。',
-        rows: 4,
+        explanation: '自動生成後に編集できます。',
+        rows: 5,
         section: 'result'
       },
     ],
@@ -253,128 +246,97 @@ export const stepFormConfigs = {
     completionCheck: (data) => data?.accountName && data?.fullProfile,
   },
   '1-4': {
+    hasIconGenerator: true,
     fields: [
+      // アイコン生成入力
       {
-        id: 'iconStyle',
-        label: 'アイコンスタイル',
+        id: 'characterType',
+        label: 'キャラタイプ',
         type: 'select',
-        question: 'どんなアイコンにしますか？',
-        explanation: '顔出しなしでもOK。イラストや商品画像で統一感を出せばOK。Canvaで簡単に作れます。',
+        question: 'どんなキャラクターにしますか？',
+        explanation: 'アイコンのメインキャラクターを選んでください。',
         options: [
-          { value: 'face', label: '顔出し' },
-          { value: 'illustration', label: 'イラスト' },
-          { value: 'product', label: '商品・アイテム画像' },
-          { value: 'logo', label: 'ロゴ・文字' },
-        ]
+          { value: 'animal', label: '動物' },
+          { value: 'human', label: '人' },
+          { value: 'fantasy', label: '架空キャラ' },
+        ],
+        section: 'generator'
       },
       {
-        id: 'iconCreated',
-        label: 'アイコン画像を作成した',
-        type: 'checkbox',
-        question: 'アイコン画像は準備できましたか？',
-        explanation: '正方形で、背景はシンプルに。スマホで見ても分かりやすいものに。'
+        id: 'characterKind',
+        label: '種類',
+        type: 'text',
+        placeholder: '例: カピバラ、うさぎ、女の子、ロボット',
+        question: '具体的にどんなキャラ？',
+        explanation: '具体的な種類を入力してください。',
+        section: 'generator'
       },
+      {
+        id: 'expression',
+        label: '表情・雰囲気',
+        type: 'select',
+        question: 'どんな雰囲気にしますか？',
+        explanation: 'アイコンの印象を決める大事な要素です。',
+        options: [
+          { value: 'gentle', label: 'やさしい' },
+          { value: 'energetic', label: '元気' },
+          { value: 'cool', label: 'クール' },
+          { value: 'friendly', label: '親しみやすい' },
+        ],
+        section: 'generator'
+      },
+      // 完了チェック
       {
         id: 'iconSet',
         label: 'Threadsにアイコンを設定した',
         type: 'checkbox',
         question: 'Threadsのプロフィールに設定しましたか？',
-        explanation: 'プロフィール編集からアイコンを変更できます。'
+        explanation: 'プロフィール編集からアイコンを変更できます。',
+        section: 'complete'
       },
     ],
     completionCheck: (data) => data?.iconSet,
   },
-  '2-1': {
-    fields: [
-      {
-        id: 'largeAccountsCount',
-        label: 'フォローした大手アカウント数',
-        type: 'number',
-        min: 0,
-        max: 20,
-        target: 5,
-        question: '何件の大手アカウントをフォローしましたか？',
-        explanation: '大手をフォローすると、ホーム欄がジャンル関連で埋まってリサーチしやすくなります。バズるパターンも自然と身につきます。'
-      },
-      {
-        id: 'largeAccountsList',
-        label: 'フォローしたアカウント',
-        type: 'textarea',
-        placeholder: '@account1\n@account2\n...',
-        question: 'フォローしたアカウントをメモしておきましょう',
-        explanation: '後で参考にするためにメモしておくと便利です。'
-      },
-    ],
-    completionCheck: (data) => data?.largeAccountsCount >= 5,
-  },
-  '2-2': {
-    fields: [
-      {
-        id: 'midAccountsCount',
-        label: 'フォローした中規模アカウント数',
-        type: 'number',
-        min: 0,
-        max: 20,
-        target: 5,
-        question: '何件の中規模アカウントをフォローしましたか？',
-        explanation: 'フォロワー500-5,000人は「再現可能な成功例」。完璧じゃなくても伸びてる=自分でも真似できる！'
-      },
-      {
-        id: 'midAccountsList',
-        label: 'フォローしたアカウント',
-        type: 'textarea',
-        placeholder: '@account1\n@account2\n...',
-        question: '「自分もできそう」と思ったアカウントは？',
-        explanation: 'フォロワーが少ないのにバズってる投稿 = 「商品自体にバズる力がある」証拠です。'
-      },
-    ],
-    completionCheck: (data) => data?.midAccountsCount >= 5,
-  },
-  '2-3': {
-    fields: [
-      {
-        id: 'buzzPostsCount',
-        label: 'ストックしたバズ投稿数',
-        type: 'number',
-        min: 0,
-        max: 50,
-        target: 10,
-        question: '参考になる投稿を何件保存しましたか？',
-        explanation: 'バズ投稿には「型」があります。保存→分析→アレンジで効率的にバズを狙えます。'
-      },
-      {
-        id: 'buzzPostsNotes',
-        label: 'バズ投稿の分析メモ',
-        type: 'textarea',
-        placeholder: '・〇〇の投稿: フック文が良かった\n・△△の投稿: 画像が映えてた',
-        question: 'なぜその投稿はバズったと思いますか？',
-        explanation: '「フック文が良い」「画像が映えてる」「共感できる」など、理由を書いておくと後で役立ちます。'
-      },
-    ],
-    completionCheck: (data) => data?.buzzPostsCount >= 10,
-  },
   '2-4': {
     fields: [
       {
-        id: 'productCount',
-        label: 'リストアップした商品数',
-        type: 'number',
-        min: 0,
-        max: 50,
-        target: 10,
-        question: '紹介したい商品を何件見つけましたか？',
-        explanation: '事前にストックしておくと、投稿ネタに困りません。楽天で同じ商品を検索してブックマークしておきましょう。'
+        id: 'productList',
+        label: '投稿URLリスト',
+        type: 'urlTable',
+        placeholder: 'https://...',
+        question: '見つけた投稿をリストアップしましょう',
+        explanation: 'バズっている投稿のURLを追加してください。クリックで新しいタブで開けます。'
       },
       {
-        id: 'productList',
-        label: '商品リスト',
-        type: 'textarea',
-        placeholder: '1. 商品名 - 楽天URL\n2. 商品名 - 楽天URL\n...',
-        question: '見つけた商品をリストアップしましょう',
-        explanation: '価格帯は2,000-10,000円がクリックされやすい。「画像映え」する商品を優先！'
+        id: 'productCount',
+        label: 'リストアップした投稿数',
+        type: 'autoCount',
+        sourceField: 'productList',
+        question: '見つけた投稿の件数',
+        explanation: '上のテーブルに追加した投稿URLの件数が自動でカウントされます。'
       },
     ],
-    completionCheck: (data) => data?.productCount >= 10,
+    completionCheck: (data) => Array.isArray(data?.productList) && data.productList.length >= 10,
+  },
+  '3-0': {
+    fields: [
+      {
+        id: 'productMapping',
+        label: '商品登録リスト',
+        type: 'buzzToRakutenTable',
+        sourceStep: '2-4',
+        sourceField: 'productList',
+        placeholder: 'https://item.rakuten.co.jp/...',
+        question: 'バズ投稿から楽天商品を探してROOMに登録しましょう',
+        explanation: 'リサーチで保存した投稿URLから商品を探し、楽天URLを入力してROOMに登録してください。'
+      },
+    ],
+    completionCheck: (data, allUserData) => {
+      const sourceUrls = allUserData?.['2-4']?.productList || [];
+      const mapping = data?.productMapping || {};
+      if (sourceUrls.length === 0) return false;
+      return sourceUrls.every((_, index) => mapping[index]?.roomRegistered);
+    },
   },
   '3-1': {
     fields: [
@@ -674,9 +636,6 @@ export const initialPhases = [
     icon: Search,
     color: 'bg-purple-500',
     steps: [
-      { id: '2-1', name: '大手アカウントフォロー', status: 'locked', description: 'フォロワー5千以上を5-10フォロー' },
-      { id: '2-2', name: '中規模アカウントフォロー', status: 'locked', description: 'フォロワー500-5千を5フォロー' },
-      { id: '2-3', name: 'バズ投稿ストック', status: 'locked', description: '参考になる投稿を保存' },
       { id: '2-4', name: '商品候補リストアップ', status: 'locked', description: '紹介する商品を選定', hasAI: true },
     ]
   },
@@ -686,6 +645,7 @@ export const initialPhases = [
     icon: FileText,
     color: 'bg-orange-500',
     steps: [
+      { id: '3-0', name: '商品をROOMに登録', status: 'locked', description: '画像検索で商品を探してROOMに追加' },
       { id: '3-1', name: '挨拶投稿作成', status: 'locked', description: 'バズを狙う自己紹介投稿', hasAI: true, important: true },
       { id: '3-2', name: '初期投稿セット準備', status: 'locked', description: '5-10投稿を事前に用意', hasAI: true },
       { id: '3-3', name: '投稿スケジュール設計', status: 'locked', description: 'いつ何を投稿するか計画' },
@@ -953,60 +913,36 @@ Threadsを見ている主婦さんは、
     tips: '顔出しなしでも、イラストや商品画像で統一感を出せばOK。',
     hasAI: true,
   },
-  '2-1': {
-    title: '大手アカウントフォロー（ジャンル認知）',
-    why: '大手をフォローすることで、①ホーム欄がジャンル関連で埋まりリサーチ効率UP ②バズる投稿パターンが自然と身につく',
-    steps: [
-      'Threadsでジャンル関連ワードを検索',
-      'フォロワー5,000人以上のアカウントを5-10件探す',
-      '目標にしたいアカウントをフォロー',
-      'そのアカウントのフォロー欄から芋づる式にリサーチ',
-    ],
-    tips: '同ジャンル以外の発信にはリアクションしない。ホーム欄を「リサーチ専用」に育てよう。',
-  },
-  '2-2': {
-    title: '中規模アカウントフォロー',
-    why: 'フォロワー500-5,000人の中規模アカウントは「再現可能な成功例」。完璧すぎない投稿でも伸びてる = 自分でも真似できる！',
-    steps: [
-      'フォロワー500-5,000人のアカウントを探す',
-      '投稿頻度と内容をチェック',
-      '5アカウント程度フォロー',
-      '「自分もできそう」なポイントをメモ',
-    ],
-    tips: 'フォロワーが少ないのにバズっている投稿 = 「商品自体にバズる力がある」証拠。大手より参考になる！',
-  },
-  '2-3': {
-    title: 'バズ投稿ストック',
-    why: 'バズ投稿には「型」がある。保存→分析→アレンジの流れで効率的にバズを狙えます。',
-    steps: [
-      '目標アカウントの過去投稿をチェック',
-      'いいねが多い投稿を探して保存',
-      '「なぜバズったか」を分析（フック文・画像・構成）',
-      '10投稿以上ストックする',
-    ],
-    stockTypes: [
-      'バズっている商品投稿（収益目的）',
-      '情報・ノウハウ系の投稿（有益目的）',
-      '共感・感情に訴える投稿（ファン化目的）',
-    ],
-    tips: '他SNS（X、Instagram、YouTube）でもリサーチすると差別化できる！Threadsだけでリサーチしてる人が多いので。',
-  },
   '2-4': {
     title: '商品候補リストアップ',
-    why: 'バズっている商品を事前にストックしておくと、投稿ネタに困らない！',
+    why: '慣れるまでは、まず、バズリ投稿の内容の焼き直しをします。\n「雑貨」であれば、紹介する雑貨は同じもの、紹介文をオリジナルに書き換えて投稿します。\nつまり、再投稿用の画像集めの作業です。',
     steps: [
-      '目標アカウントのバズ商品投稿を見つける',
-      '楽天で同じ商品を検索してブックマーク',
-      '「画像映え」する商品を優先',
-      '10-20商品をリストアップ',
+      '自身のカテゴリーでバズっている投稿を、X、スレッズで検索',
+      '下記の表に、投稿URLを貼り付ける',
+      '※投稿URLは投稿準備で使用します',
     ],
     researchTips: [
       'フォロワー少ない人の投稿がバズ → 商品自体にバズ力あり',
       'フォロワー多い人の投稿がバズ → その人だからバズた可能性',
       '複数のアカウントで紹介されてる → 需要が高い証拠',
     ],
-    tips: '価格帯は2,000-10,000円がクリックされやすい。レビュー数が多い商品は信頼度UP。',
+    tips: '1000フォロワー程度までは、人気を集める事に集中です。',
     hasAI: true,
+  },
+  '3-0': {
+    title: '① 商品をROOMに登録',
+    why: 'リサーチで保存した投稿URLを開き、画像をChrome画像検索で探しましょう',
+    steps: [
+      '下のURLリストから投稿を開く',
+      '画像が表示されている状態で、Chromeの右上「⋮」（縦3点）を左クリック',
+      'プルダウンから「Googleレンズで検索」を選択',
+      '目的の画像を囲んで検索',
+      '検索結果から「楽天」で販売されている商品を選択',
+      '楽天商品URLを表にコピペ',
+      '商品販売ページの「ROOMへ追加」をクリックし、自身のROOMへ登録',
+      '「ROOMに登録」にチェック',
+    ],
+    tips: '画像検索で見つからない場合は、商品名やキーワードで楽天市場を直接検索してみましょう。',
   },
   '3-1': {
     title: '挨拶投稿作成（超重要！）',

@@ -1,108 +1,382 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { X, HelpCircle, Check, AlertTriangle, Sparkles } from 'lucide-react';
+import { X, HelpCircle, Check, AlertTriangle, Sparkles, Image, Download, Plus, Trash2, ExternalLink } from 'lucide-react';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
 import PhaseDetail from './components/PhaseDetail';
+import ItemBox from './components/ItemBox';
 import { stepFormConfigs, initialPhases, STORAGE_KEYS } from './data/config';
 
-// ひらがな→ローマ字変換テーブル
-const hiraganaToRomaji = {
-  'あ': 'a', 'い': 'i', 'う': 'u', 'え': 'e', 'お': 'o',
-  'か': 'ka', 'き': 'ki', 'く': 'ku', 'け': 'ke', 'こ': 'ko',
-  'さ': 'sa', 'し': 'shi', 'す': 'su', 'せ': 'se', 'そ': 'so',
-  'た': 'ta', 'ち': 'chi', 'つ': 'tsu', 'て': 'te', 'と': 'to',
-  'な': 'na', 'に': 'ni', 'ぬ': 'nu', 'ね': 'ne', 'の': 'no',
-  'は': 'ha', 'ひ': 'hi', 'ふ': 'fu', 'へ': 'he', 'ほ': 'ho',
-  'ま': 'ma', 'み': 'mi', 'む': 'mu', 'め': 'me', 'も': 'mo',
-  'や': 'ya', 'ゆ': 'yu', 'よ': 'yo',
-  'ら': 'ra', 'り': 'ri', 'る': 'ru', 'れ': 're', 'ろ': 'ro',
-  'わ': 'wa', 'を': 'wo', 'ん': 'n',
-  'が': 'ga', 'ぎ': 'gi', 'ぐ': 'gu', 'げ': 'ge', 'ご': 'go',
-  'ざ': 'za', 'じ': 'ji', 'ず': 'zu', 'ぜ': 'ze', 'ぞ': 'zo',
-  'だ': 'da', 'ぢ': 'di', 'づ': 'du', 'で': 'de', 'ど': 'do',
-  'ば': 'ba', 'び': 'bi', 'ぶ': 'bu', 'べ': 'be', 'ぼ': 'bo',
-  'ぱ': 'pa', 'ぴ': 'pi', 'ぷ': 'pu', 'ぺ': 'pe', 'ぽ': 'po',
-  'きゃ': 'kya', 'きゅ': 'kyu', 'きょ': 'kyo',
-  'しゃ': 'sha', 'しゅ': 'shu', 'しょ': 'sho',
-  'ちゃ': 'cha', 'ちゅ': 'chu', 'ちょ': 'cho',
-  'にゃ': 'nya', 'にゅ': 'nyu', 'にょ': 'nyo',
-  'ひゃ': 'hya', 'ひゅ': 'hyu', 'ひょ': 'hyo',
-  'みゃ': 'mya', 'みゅ': 'myu', 'みょ': 'myo',
-  'りゃ': 'rya', 'りゅ': 'ryu', 'りょ': 'ryo',
-  'ぎゃ': 'gya', 'ぎゅ': 'gyu', 'ぎょ': 'gyo',
-  'じゃ': 'ja', 'じゅ': 'ju', 'じょ': 'jo',
-  'びゃ': 'bya', 'びゅ': 'byu', 'びょ': 'byo',
-  'ぴゃ': 'pya', 'ぴゅ': 'pyu', 'ぴょ': 'pyo',
-  'ー': '', 'っ': '',
-};
+// URLテーブルコンポーネント
+function URLTableField({ field, value, onChange, placeholder }) {
+  const [newUrl, setNewUrl] = useState('');
+  const urls = Array.isArray(value) ? value : [];
 
-// カタカナ→ひらがな変換
-const katakanaToHiragana = (str) => {
-  return str.replace(/[\u30A1-\u30F6]/g, (match) => {
-    return String.fromCharCode(match.charCodeAt(0) - 0x60);
-  });
-};
-
-// 名前をローマ字に変換
-const toRomaji = (name) => {
-  const hiragana = katakanaToHiragana(name.toLowerCase());
-  let result = '';
-  let i = 0;
-  while (i < hiragana.length) {
-    // 2文字の組み合わせを先にチェック
-    if (i < hiragana.length - 1) {
-      const twoChar = hiragana.substring(i, i + 2);
-      if (hiraganaToRomaji[twoChar]) {
-        result += hiraganaToRomaji[twoChar];
-        i += 2;
-        continue;
-      }
+  const addUrl = () => {
+    const trimmedUrl = newUrl.trim();
+    if (trimmedUrl && !urls.includes(trimmedUrl)) {
+      onChange([...urls, trimmedUrl]);
+      setNewUrl('');
     }
-    // 1文字
-    const oneChar = hiragana[i];
-    if (hiraganaToRomaji[oneChar]) {
-      result += hiraganaToRomaji[oneChar];
-    } else if (/[a-z]/.test(oneChar)) {
-      result += oneChar;
+  };
+
+  const removeUrl = (index) => {
+    const newUrls = urls.filter((_, i) => i !== index);
+    onChange(newUrls);
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addUrl();
     }
-    i++;
-  }
-  return result;
-};
+  };
 
-// ジャンル→英語変換
-const genreToEnglish = {
-  '美容': 'beauty',
-  '育児': 'parenting',
-  '子育て': 'parenting',
-  'ファッション': 'fashion',
-  '服': 'fashion',
-  '暮らし': 'lifestyle',
-  '雑貨': 'zakka',
-  'インテリア': 'interior',
-  '家具': 'furniture',
-  '便利グッズ': 'goods',
-  '旅行': 'travel',
-  'コスメ': 'cosme',
-  'ダイエット': 'diet',
-  '料理': 'cooking',
-  'レシピ': 'recipe',
-  '節約': 'saving',
-  'ガジェット': 'gadget',
-};
+  return (
+    <div className="space-y-3">
+      {/* URL入力欄 */}
+      <div className="flex gap-2">
+        <input
+          type="url"
+          value={newUrl}
+          onChange={(e) => setNewUrl(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder={placeholder || 'URLを入力...'}
+          className="flex-1 bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+        />
+        <button
+          onClick={addUrl}
+          disabled={!newUrl.trim()}
+          className={`px-4 py-2 rounded-lg flex items-center gap-1 font-medium transition-all ${
+            newUrl.trim()
+              ? 'bg-blue-600 hover:bg-blue-700 text-white'
+              : 'bg-gray-700 text-gray-500 cursor-not-allowed'
+          }`}
+        >
+          <Plus className="w-4 h-4" />
+          追加
+        </button>
+      </div>
 
-const getGenreEnglish = (genre) => {
-  if (!genre) return 'lifestyle';
-  for (const [jp, en] of Object.entries(genreToEnglish)) {
-    if (genre.includes(jp)) return en;
+      {/* URLテーブル */}
+      {urls.length > 0 && (
+        <div className="border border-gray-600 rounded-lg overflow-hidden">
+          <table className="w-full">
+            <thead>
+              <tr className="bg-gray-700">
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-400 w-12">#</th>
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-400">投稿URL</th>
+                <th className="px-3 py-2 text-center text-xs font-medium text-gray-400 w-16">削除</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-700">
+              {urls.map((url, index) => (
+                <tr key={index} className="hover:bg-gray-750">
+                  <td className="px-3 py-2 text-sm text-gray-400">{index + 1}</td>
+                  <td className="px-3 py-2">
+                    <a
+                      href={url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-400 hover:text-blue-300 text-sm flex items-center gap-1 break-all"
+                    >
+                      <span className="truncate max-w-md">{url}</span>
+                      <ExternalLink className="w-3 h-3 flex-shrink-0" />
+                    </a>
+                  </td>
+                  <td className="px-3 py-2 text-center">
+                    <button
+                      onClick={() => removeUrl(index)}
+                      className="p-1 text-red-400 hover:text-red-300 hover:bg-red-900/30 rounded transition-all"
+                      title="削除"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {urls.length === 0 && (
+        <div className="text-center py-6 text-gray-500 bg-gray-800/50 rounded-lg border border-dashed border-gray-700">
+          <p className="text-sm">URLを追加してください</p>
+        </div>
+      )}
+
+      {/* カウント表示 */}
+      <div className="text-xs text-gray-400">
+        登録済み: {urls.length}件
+      </div>
+    </div>
+  );
+}
+
+// 楽天商品URL + ROOMチェックボックス テーブルコンポーネント
+function RakutenProductTable({ value, onChange, placeholder }) {
+  const [newUrl, setNewUrl] = useState('');
+  const products = Array.isArray(value) ? value : [];
+
+  const addProduct = () => {
+    const trimmedUrl = newUrl.trim();
+    if (trimmedUrl && !products.some(p => p.url === trimmedUrl)) {
+      onChange([...products, { url: trimmedUrl, roomRegistered: false }]);
+      setNewUrl('');
+    }
+  };
+
+  const removeProduct = (index) => {
+    onChange(products.filter((_, i) => i !== index));
+  };
+
+  const toggleRoomRegistered = (index) => {
+    onChange(products.map((p, i) =>
+      i === index ? { ...p, roomRegistered: !p.roomRegistered } : p
+    ));
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addProduct();
+    }
+  };
+
+  const registeredCount = products.filter(p => p.roomRegistered).length;
+
+  return (
+    <div className="space-y-3">
+      {/* URL入力欄 */}
+      <div className="flex gap-2">
+        <input
+          type="url"
+          value={newUrl}
+          onChange={(e) => setNewUrl(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder={placeholder || 'https://item.rakuten.co.jp/...'}
+          className="flex-1 bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+        />
+        <button
+          onClick={addProduct}
+          disabled={!newUrl.trim()}
+          className={`px-4 py-2 rounded-lg flex items-center gap-1 font-medium transition-all ${
+            newUrl.trim()
+              ? 'bg-blue-600 hover:bg-blue-700 text-white'
+              : 'bg-gray-700 text-gray-500 cursor-not-allowed'
+          }`}
+        >
+          <Plus className="w-4 h-4" />
+          追加
+        </button>
+      </div>
+
+      {/* 商品テーブル */}
+      {products.length > 0 && (
+        <div className="border border-gray-600 rounded-lg overflow-hidden">
+          <table className="w-full">
+            <thead>
+              <tr className="bg-gray-700">
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-400 w-12">#</th>
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-400">楽天商品URL</th>
+                <th className="px-3 py-2 text-center text-xs font-medium text-gray-400 w-28">ROOMに登録</th>
+                <th className="px-3 py-2 text-center text-xs font-medium text-gray-400 w-16">削除</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-700">
+              {products.map((product, index) => (
+                <tr
+                  key={index}
+                  className={`transition-all ${product.roomRegistered ? 'bg-green-900/20 opacity-60' : 'hover:bg-gray-750'}`}
+                >
+                  <td className="px-3 py-2 text-sm text-gray-400">{index + 1}</td>
+                  <td className="px-3 py-2">
+                    <a
+                      href={product.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={`text-sm flex items-center gap-1 break-all ${product.roomRegistered ? 'text-green-400/70' : 'text-blue-400 hover:text-blue-300'}`}
+                    >
+                      <span className="truncate max-w-md">{product.url}</span>
+                      <ExternalLink className="w-3 h-3 flex-shrink-0" />
+                    </a>
+                  </td>
+                  <td className="px-3 py-2 text-center">
+                    <label className="flex items-center justify-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={product.roomRegistered || false}
+                        onChange={() => toggleRoomRegistered(index)}
+                        className="w-4 h-4 rounded border-gray-500 text-green-500 focus:ring-green-500 focus:ring-offset-gray-800"
+                      />
+                      <span className={`text-xs ${product.roomRegistered ? 'text-green-400' : 'text-gray-500'}`}>
+                        {product.roomRegistered ? '済み' : '未'}
+                      </span>
+                    </label>
+                  </td>
+                  <td className="px-3 py-2 text-center">
+                    <button
+                      onClick={() => removeProduct(index)}
+                      className="p-1 text-red-400 hover:text-red-300 hover:bg-red-900/30 rounded transition-all"
+                      title="削除"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <div className="bg-gray-700 px-3 py-2 text-xs text-gray-400 flex justify-between">
+            <span>ROOM登録: {registeredCount} / {products.length}件</span>
+            {registeredCount === products.length && products.length > 0 && (
+              <span className="text-green-400">✓ 全て完了!</span>
+            )}
+          </div>
+        </div>
+      )}
+
+      {products.length === 0 && (
+        <div className="text-center py-6 text-gray-500 bg-gray-800/50 rounded-lg border border-dashed border-gray-700">
+          <p className="text-sm">楽天商品URLを追加してください</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// バズ投稿URL → 楽天商品URL マッピングテーブル
+function BuzzToRakutenTable({ buzzUrls, value, onChange, placeholder }) {
+  const mapping = value || {};
+
+  const updateMapping = (index, field, newValue) => {
+    onChange({
+      ...mapping,
+      [index]: {
+        ...mapping[index],
+        [field]: newValue,
+      },
+    });
+  };
+
+  const registeredCount = buzzUrls.filter((_, index) => mapping[index]?.roomRegistered).length;
+
+  if (buzzUrls.length === 0) {
+    return (
+      <div className="text-center py-6 text-gray-500 bg-gray-800/50 rounded-lg border border-dashed border-gray-700">
+        <p className="text-sm">📜 調査報告書でURLを追加してください</p>
+        <p className="text-xs mt-1 text-gray-600">リサーチ → 商品候補リストアップ で登録できます</p>
+      </div>
+    );
   }
-  return 'lifestyle';
-};
+
+  return (
+    <div className="space-y-3">
+      <div className="border border-gray-600 rounded-lg overflow-hidden">
+        <table className="w-full">
+          <thead>
+            <tr className="bg-gray-700">
+              <th className="px-2 py-2 text-left text-xs font-medium text-gray-400 w-10">#</th>
+              <th className="px-2 py-2 text-left text-xs font-medium text-gray-400">バズ投稿URL</th>
+              <th className="px-2 py-2 text-left text-xs font-medium text-gray-400">楽天商品URL</th>
+              <th className="px-2 py-2 text-center text-xs font-medium text-gray-400 w-24">ROOM登録</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-700">
+            {buzzUrls.map((buzzUrl, index) => {
+              const rowData = mapping[index] || {};
+              const isRegistered = rowData.roomRegistered;
+              return (
+                <tr
+                  key={index}
+                  className={`transition-all ${isRegistered ? 'bg-green-900/20 opacity-70' : 'hover:bg-gray-750'}`}
+                >
+                  <td className="px-2 py-2 text-sm text-gray-400">{index + 1}</td>
+                  <td className="px-2 py-2">
+                    <a
+                      href={buzzUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={`text-xs flex items-center gap-1 ${isRegistered ? 'text-green-400/70' : 'text-blue-400 hover:text-blue-300'}`}
+                    >
+                      <span className="truncate max-w-[180px]">{buzzUrl}</span>
+                      <ExternalLink className="w-3 h-3 flex-shrink-0" />
+                    </a>
+                  </td>
+                  <td className="px-2 py-2">
+                    <div className="flex items-center gap-1">
+                      <input
+                        type="url"
+                        value={rowData.rakutenUrl || ''}
+                        onChange={(e) => updateMapping(index, 'rakutenUrl', e.target.value)}
+                        placeholder={placeholder || 'https://item.rakuten.co.jp/...'}
+                        className={`flex-1 bg-gray-700 border border-gray-600 rounded px-2 py-1 text-xs placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 ${isRegistered ? 'text-green-400/70' : 'text-white'}`}
+                      />
+                      {rowData.rakutenUrl && (
+                        <a
+                          href={rowData.rakutenUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="p-1 text-orange-400 hover:text-orange-300 hover:bg-orange-900/30 rounded transition-all flex-shrink-0"
+                          title="楽天ページを開く"
+                        >
+                          <ExternalLink className="w-3 h-3" />
+                        </a>
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-2 py-2 text-center">
+                    <label className="flex items-center justify-center gap-1 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={isRegistered || false}
+                        onChange={() => updateMapping(index, 'roomRegistered', !isRegistered)}
+                        className="w-4 h-4 rounded border-gray-500 text-green-500 focus:ring-green-500 focus:ring-offset-gray-800"
+                      />
+                      <span className={`text-xs ${isRegistered ? 'text-green-400' : 'text-gray-500'}`}>
+                        {isRegistered ? '済' : '未'}
+                      </span>
+                    </label>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+        <div className="bg-gray-700 px-3 py-2 text-xs text-gray-400 flex justify-between">
+          <span>ROOM登録: {registeredCount} / {buzzUrls.length}件</span>
+          {registeredCount === buzzUrls.length && buzzUrls.length > 0 && (
+            <span className="text-green-400">✓ 全て完了!</span>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function Dashboard() {
   const [phases, setPhases] = useState(() => {
     const saved = localStorage.getItem(STORAGE_KEYS.PHASES);
-    return saved ? JSON.parse(saved) : initialPhases;
+    if (saved) {
+      // localStorageから読み込んだデータにiconと新しいステップを復元
+      const savedPhases = JSON.parse(saved);
+      return initialPhases.map((initialPhase) => {
+        const savedPhase = savedPhases.find(p => p.id === initialPhase.id);
+        if (!savedPhase) return initialPhase;
+
+        // 保存されたステップと新規ステップをマージ
+        const mergedSteps = initialPhase.steps.map((initialStep) => {
+          const savedStep = savedPhase.steps.find(s => s.id === initialStep.id);
+          return savedStep ? { ...initialStep, status: savedStep.status } : initialStep;
+        });
+
+        return {
+          ...initialPhase,
+          steps: mergedSteps,
+        };
+      });
+    }
+    return initialPhases;
   });
   const [expandedPhase, setExpandedPhase] = useState(0);
   const [selectedStep, setSelectedStep] = useState(null);
@@ -113,6 +387,7 @@ export default function Dashboard() {
   const [showPatterns, setShowPatterns] = useState(false);
   const [showModules, setShowModules] = useState(false);
   const [showSafetyInfo, setShowSafetyInfo] = useState(false);
+  const [showItemBox, setShowItemBox] = useState(false);
   const [activeTab, setActiveTab] = useState('tasks');
   const [expandedStepId, setExpandedStepId] = useState(null);
   const [selectedFieldId, setSelectedFieldId] = useState(null);
@@ -123,6 +398,9 @@ export default function Dashboard() {
   const [openExplanation, setOpenExplanation] = useState(null);
   const [achievement, setAchievement] = useState(null);
   const [showIntroSection, setShowIntroSection] = useState(true);
+  const [generatedProfiles, setGeneratedProfiles] = useState([]);
+  const [generatedIcons, setGeneratedIcons] = useState([]);
+  const [isGeneratingIcons, setIsGeneratingIcons] = useState(false);
 
   // ユーザー入力データ
   const [userData, setUserData] = useState(() => {
@@ -274,44 +552,219 @@ export default function Dashboard() {
     return Math.round((completed / allSteps.length) * 100);
   };
 
-  // プロフィール自動生成
+  // プロフィール自動生成（10パターン）
   const generateProfile = () => {
     const step11 = userData['1-1'] || {};
     const step12 = userData['1-2'] || {};
     const step13 = userData['1-3'] || {};
 
     const name = step13.characterName || 'なまえ';
+    const title = step13.title || '';
     const genre = step11.selectedGenre || 'ライフスタイル';
     const empathy = step13.empathyPoint || '';
+    const authority = step13.authority || '';
+    const tone = step13.tone || 'fun';
     const targetAge = step12.targetAge || '20-30';
     const targetGender = step12.targetGender === 'male' ? '男性' : step12.targetGender === 'female' ? '女性' : 'みんな';
+    const target = `${targetAge}代${targetGender}`;
 
-    // アカウント名生成
-    const accountName = `${name}｜${genre}の人`;
+    const isFun = tone === 'fun';
 
-    // ユーザーID生成
-    const nameRomaji = toRomaji(name);
-    const genreEn = getGenreEnglish(genre);
-    const userId = `@${nameRomaji}_${genreEn}`;
+    // 10パターンのテンプレート
+    const templates = [
+      // パターン1: シンプル権威性重視
+      {
+        accountName: `${name}｜${title || genre + 'の人'}`,
+        profile: [
+          authority ? (isFun ? `${authority}😳` : authority) : null,
+          isFun ? `${genre}好きが本当に良かったものだけ紹介✨` : `${genre}好きが本当に良かったものだけ紹介`,
+          empathy || null,
+        ].filter(Boolean).join('\n')
+      },
+      // パターン2: フレンドリー
+      {
+        accountName: `${name}｜${title || genre + 'の人'}`,
+        profile: [
+          authority ? (isFun ? `\\${authority}/` : authority) : null,
+          isFun ? `${name}です！${genre}のこと語らせて♡` : `${name}です。${genre}について発信中`,
+          isFun ? `${target}さん一緒に楽しもう！` : `${target}の方に向けて発信しています`,
+        ].filter(Boolean).join('\n')
+      },
+      // パターン3: スタンダード
+      {
+        accountName: `${name}｜${title || genre + 'の人'}`,
+        profile: [
+          empathy || null,
+          isFun ? `${target}向けに${genre}を毎日発信中！` : `${target}向けに${genre}を毎日発信中`,
+          isFun ? `仲良くしてね♡` : `フォローお待ちしています`,
+        ].filter(Boolean).join('\n')
+      },
+      // パターン4: オタク系
+      {
+        accountName: isFun ? `${genre}オタクの${name}` : `${name}｜${genre}専門`,
+        profile: [
+          authority || null,
+          isFun ? `使って良かったものを本音レビュー🔍` : `使って良かったものを本音でレビュー`,
+          empathy || null,
+        ].filter(Boolean).join('\n')
+      },
+      // パターン5: 自信系
+      {
+        accountName: `${name}`,
+        profile: [
+          empathy || null,
+          isFun ? `だから${genre}には詳しいよ！` : `${genre}に詳しいです`,
+          isFun ? `フォローして損させません✨` : `有益な情報をお届けします`,
+        ].filter(Boolean).join('\n')
+      },
+      // パターン6: 実績アピール
+      {
+        accountName: `${name}｜${title || genre + 'マニア'}`,
+        profile: [
+          authority ? (isFun ? `【${authority}】` : authority) : null,
+          isFun ? `${genre}の最新情報をお届け📢` : `${genre}の最新情報をお届け`,
+          isFun ? `${target}さんフォローしてね！` : `${target}の方はぜひフォローを`,
+        ].filter(Boolean).join('\n')
+      },
+      // パターン7: 共感重視
+      {
+        accountName: `${name}｜${title || genre + '発信'}`,
+        profile: [
+          empathy || null,
+          isFun ? `同じ悩みを持つあなたへ💕` : `同じ悩みを持つ方へ`,
+          isFun ? `${genre}で人生変わりました！` : `${genre}で生活が変わりました`,
+        ].filter(Boolean).join('\n')
+      },
+      // パターン8: プロフェッショナル
+      {
+        accountName: `${name}｜${title || genre + '情報'}`,
+        profile: [
+          authority || null,
+          `${target}に向けて${genre}情報を発信`,
+          isFun ? `気軽にフォローしてください🙌` : `お気軽にフォローください`,
+        ].filter(Boolean).join('\n')
+      },
+      // パターン9: カジュアル
+      {
+        accountName: isFun ? `${name}🌸${genre}` : `${name}｜${genre}`,
+        profile: [
+          isFun ? `${genre}大好き${name}です💗` : `${genre}が好きな${name}です`,
+          empathy || null,
+          isFun ? `毎日おすすめ紹介してます！` : `毎日おすすめを紹介しています`,
+        ].filter(Boolean).join('\n')
+      },
+      // パターン10: シンプル
+      {
+        accountName: `${name}｜${title || genre}`,
+        profile: [
+          authority || empathy || null,
+          `${genre}を${target}向けに紹介`,
+          isFun ? `いいね・フォローで応援してね♡` : `フォローよろしくお願いします`,
+        ].filter(Boolean).join('\n')
+      },
+    ];
 
-    // プロフィール文生成
-    let profileText = '';
-    if (empathy) {
-      profileText += `${empathy}\n`;
-    }
-    profileText += `${targetAge}代${targetGender}向けに${genre}を毎日発信中！\n`;
-    profileText += `仲良くしてね♡`;
+    setGeneratedProfiles(templates);
+  };
 
-    // 更新
+  // パターン選択
+  const selectProfile = (pattern) => {
     setUserData(prev => ({
       ...prev,
       '1-3': {
         ...prev['1-3'],
-        accountName,
-        userId,
-        fullProfile: profileText,
+        accountName: pattern.accountName,
+        fullProfile: pattern.profile,
       }
     }));
+    setGeneratedProfiles([]);
+  };
+
+  // アイコン生成プロンプト作成（プレビュー用）
+  const buildIconPrompt = () => {
+    const step14 = userData['1-4'] || {};
+    const kind = step14.characterKind || 'キャラクター';
+    const expressionMap = {
+      gentle: 'やさしい',
+      energetic: '元気な',
+      cool: 'クールな',
+      friendly: '親しみやすい',
+    };
+    const expression = expressionMap[step14.expression] || 'やさしい';
+
+    return `スレッズ用のSNSアイコン。色鉛筆で描いたシンプルでかわいい${kind}、${expression}雰囲気、単色背景、顔のアップ、ミニマル、丸いアイコン向け`;
+  };
+
+  // アイコン生成（DALL-E 3 API）
+  const generateIcon = async () => {
+    setIsGeneratingIcons(true);
+    setGeneratedIcons([]);
+
+    const step14 = userData['1-4'] || {};
+    const characterKind = step14.characterKind || 'キャラクター';
+    const expression = step14.expression || 'gentle';
+
+    try {
+      const response = await fetch('/api/generate-icon', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          characterKind,
+          expression,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'アイコン生成に失敗しました');
+      }
+
+      if (data.success && data.images) {
+        setGeneratedIcons(data.images);
+      } else {
+        throw new Error('画像データが取得できませんでした');
+      }
+    } catch (error) {
+      console.error('Icon generation error:', error);
+      alert(`エラー: ${error.message}`);
+    } finally {
+      setIsGeneratingIcons(false);
+    }
+  };
+
+  // アイコン選択
+  const selectIcon = (icon) => {
+    setUserData(prev => ({
+      ...prev,
+      '1-4': {
+        ...prev['1-4'],
+        selectedIconId: icon.id,
+        selectedIconUrl: icon.url,
+      }
+    }));
+  };
+
+  // アイコンダウンロード
+  const downloadIcon = async (url) => {
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = `threads-icon-${Date.now()}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (error) {
+      console.error('Download error:', error);
+      // CORSエラーの場合は新しいタブで開く
+      window.open(url, '_blank');
+    }
   };
 
   // 説明ポップアップ - レンダー関数版
@@ -493,6 +946,143 @@ export default function Dashboard() {
           </div>
         );
 
+      case 'urlTable':
+        return (
+          <div className="space-y-1">
+            <QuestionLabel />
+            {isExplanationOpen && renderExplanationPopup(field, () => setOpenExplanation(null))}
+            <URLTableField
+              field={field}
+              value={value}
+              onChange={(newValue) => updateUserData(stepId, field.id, newValue)}
+              placeholder={field.placeholder}
+            />
+          </div>
+        );
+
+      case 'urlTableWithRoomCheck':
+        return (
+          <div className="space-y-1">
+            <QuestionLabel />
+            {isExplanationOpen && renderExplanationPopup(field, () => setOpenExplanation(null))}
+            <RakutenProductTable
+              value={value}
+              onChange={(newValue) => updateUserData(stepId, field.id, newValue)}
+              placeholder={field.placeholder}
+            />
+          </div>
+        );
+
+      case 'buzzToRakutenTable':
+        const buzzSourceData = userData[field.sourceStep] || {};
+        const buzzUrls = Array.isArray(buzzSourceData[field.sourceField]) ? buzzSourceData[field.sourceField] : [];
+        return (
+          <div className="space-y-1">
+            <QuestionLabel />
+            {isExplanationOpen && renderExplanationPopup(field, () => setOpenExplanation(null))}
+            <BuzzToRakutenTable
+              buzzUrls={buzzUrls}
+              value={value}
+              onChange={(newValue) => updateUserData(stepId, field.id, newValue)}
+              placeholder={field.placeholder}
+            />
+          </div>
+        );
+
+      case 'autoCount':
+        const sourceValue = data?.[field.sourceField];
+        const count = Array.isArray(sourceValue) ? sourceValue.length : 0;
+        return (
+          <div className="space-y-1">
+            <QuestionLabel />
+            {isExplanationOpen && renderExplanationPopup(field, () => setOpenExplanation(null))}
+            <div className="flex items-center gap-3 p-3 bg-gray-700/50 rounded-lg">
+              <div className="text-2xl font-bold text-blue-400">{count}</div>
+              <div className="text-gray-400">件</div>
+            </div>
+          </div>
+        );
+
+      case 'readOnlyUrlTable':
+        const sourceStepData = userData[field.sourceStep] || {};
+        const urlList = Array.isArray(sourceStepData[field.sourceField]) ? sourceStepData[field.sourceField] : [];
+        const roomRegistered = data?.roomRegistered || {};
+
+        const toggleRoomRegistered = (index) => {
+          const newRoomRegistered = { ...roomRegistered, [index]: !roomRegistered[index] };
+          updateUserData(stepId, 'roomRegistered', newRoomRegistered);
+        };
+
+        const registeredCount = Object.values(roomRegistered).filter(Boolean).length;
+
+        return (
+          <div className="space-y-1">
+            <QuestionLabel />
+            {isExplanationOpen && renderExplanationPopup(field, () => setOpenExplanation(null))}
+            {urlList.length > 0 ? (
+              <div className="border border-gray-600 rounded-lg overflow-hidden">
+                <table className="w-full">
+                  <thead>
+                    <tr className="bg-gray-700">
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-400 w-12">#</th>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-400">投稿URL</th>
+                      <th className="px-3 py-2 text-center text-xs font-medium text-gray-400 w-28">ROOM登録</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-700">
+                    {urlList.map((url, index) => {
+                      const isRegistered = roomRegistered[index];
+                      return (
+                        <tr key={index} className={`transition-all ${isRegistered ? 'bg-green-900/20 opacity-60' : 'hover:bg-gray-750'}`}>
+                          <td className="px-3 py-2 text-sm text-gray-400">{index + 1}</td>
+                          <td className="px-3 py-2">
+                            <a
+                              href={url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className={`text-sm flex items-center gap-1 break-all ${isRegistered ? 'text-green-400/70' : 'text-blue-400 hover:text-blue-300'}`}
+                            >
+                              <span className="truncate max-w-md">{url}</span>
+                              <ExternalLink className="w-3 h-3 flex-shrink-0" />
+                            </a>
+                          </td>
+                          <td className="px-3 py-2 text-center">
+                            <label className="flex items-center justify-center gap-2 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={isRegistered || false}
+                                onChange={() => toggleRoomRegistered(index)}
+                                className="w-4 h-4 rounded border-gray-500 text-green-500 focus:ring-green-500 focus:ring-offset-gray-800"
+                              />
+                              <span className={`text-xs ${isRegistered ? 'text-green-400' : 'text-gray-500'}`}>
+                                {isRegistered ? '済み' : '未'}
+                              </span>
+                            </label>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+                <div className="bg-gray-700 px-3 py-2 text-xs text-gray-400 flex justify-between">
+                  <span>登録済み: {registeredCount} / {urlList.length}件</span>
+                  {registeredCount === urlList.length && urlList.length > 0 && (
+                    <span className="text-green-400">✓ 全て完了!</span>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-6 text-gray-500 bg-gray-800/50 rounded-lg border border-dashed border-gray-700">
+                <p className="text-sm">📜 調査報告書でURLを追加してください</p>
+                <p className="text-xs mt-1 text-gray-600">リサーチ → 商品候補リストアップ で登録できます</p>
+              </div>
+            )}
+            <div className="text-xs text-gray-400">
+              登録済み: {urlList.length}件
+            </div>
+          </div>
+        );
+
       default:
         return null;
     }
@@ -512,7 +1102,7 @@ export default function Dashboard() {
     if (config.hasAutoGenerate) {
       const characterFields = config.fields.filter(f => f.section === 'character');
       const resultFields = config.fields.filter(f => f.section === 'result');
-      const canGenerate = data.characterName && data.personality && data.speakingStyle;
+      const canGenerate = data.characterName && data.title;
 
       return (
         <div className="space-y-4 mt-6">
@@ -562,27 +1152,62 @@ export default function Dashboard() {
               }`}
             >
               <Sparkles className="w-5 h-5" />
-              プロフィールを自動生成
+              10パターン生成
             </button>
             {!canGenerate && (
               <p className="text-xs text-gray-500 text-center mt-2">
-                名前・性格・話し方を入力すると生成できます
+                名前・肩書きを入力すると生成できます
               </p>
             )}
 
-            {/* 生成結果セクション */}
-            <div className="bg-gray-800 border border-gray-700 rounded-xl p-4 mt-4">
-              <h4 className="text-sm font-medium text-gray-300 mb-3 flex items-center gap-2">
-                生成結果（編集可能）
-              </h4>
-              <div className="space-y-3">
-                {resultFields.map(field => (
-                  <React.Fragment key={field.id}>
-                    {renderFormField(field, stepId, data)}
-                  </React.Fragment>
-                ))}
+            {/* パターン選択UI */}
+            {generatedProfiles.length > 0 && (
+              <div className="mt-4 space-y-3">
+                <h4 className="text-sm font-medium text-purple-300 flex items-center gap-2">
+                  <Sparkles className="w-4 h-4" />
+                  10パターンから選択してください
+                </h4>
+                <div className="grid gap-3 max-h-96 overflow-y-auto pr-2">
+                  {generatedProfiles.map((pattern, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => selectProfile(pattern)}
+                      className="text-left p-4 bg-gray-800 border border-gray-600 rounded-lg hover:border-purple-500 hover:bg-gray-750 transition-all"
+                    >
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-xs bg-purple-600/30 text-purple-400 px-2 py-0.5 rounded">
+                          {idx + 1}
+                        </span>
+                        <span className="font-medium text-white">{pattern.accountName}</span>
+                      </div>
+                      <p className="text-sm text-gray-300 whitespace-pre-line">{pattern.profile}</p>
+                    </button>
+                  ))}
+                </div>
+                <button
+                  onClick={() => setGeneratedProfiles([])}
+                  className="w-full py-2 text-sm text-gray-400 hover:text-white transition-all"
+                >
+                  閉じる
+                </button>
               </div>
-            </div>
+            )}
+
+            {/* 生成結果セクション */}
+            {generatedProfiles.length === 0 && (
+              <div className="bg-gray-800 border border-gray-700 rounded-xl p-4 mt-4">
+                <h4 className="text-sm font-medium text-gray-300 mb-3 flex items-center gap-2">
+                  生成結果（編集可能）
+                </h4>
+                <div className="space-y-3">
+                  {resultFields.map(field => (
+                    <React.Fragment key={field.id}>
+                      {renderFormField(field, stepId, data)}
+                    </React.Fragment>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* 完了チェック表示 */}
             {config.completionCheck && (
@@ -601,6 +1226,149 @@ export default function Dashboard() {
                     <>
                       <div className="w-5 h-5 rounded-full border-2 border-gray-500" />
                       <span className="text-gray-400">必要な項目を入力してください</span>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    // アイコン生成用の特別処理
+    if (config.hasIconGenerator) {
+      const generatorFields = config.fields.filter(f => f.section === 'generator');
+      const completeFields = config.fields.filter(f => f.section === 'complete');
+      const canGenerate = data.characterType && data.characterKind && data.expression;
+
+      return (
+        <div className="space-y-4 mt-6">
+          <div className="border-t border-gray-700 pt-4">
+            {/* アイコン生成セクション */}
+            <div className="bg-cyan-900/20 border border-cyan-500/30 rounded-xl p-4 mb-4">
+              <h4 className="text-sm font-medium text-cyan-300 mb-3 flex items-center gap-2">
+                <Image className="w-4 h-4" />
+                アイコン生成
+              </h4>
+              <div className="space-y-3">
+                {generatorFields.map(field => (
+                  <React.Fragment key={field.id}>
+                    {renderFormField(field, stepId, data)}
+                  </React.Fragment>
+                ))}
+              </div>
+            </div>
+
+            {/* 生成ボタン */}
+            <button
+              onClick={generateIcon}
+              disabled={!canGenerate || isGeneratingIcons}
+              className={`w-full py-3 px-4 rounded-lg flex items-center justify-center gap-2 font-medium transition-all ${
+                canGenerate && !isGeneratingIcons
+                  ? 'bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white'
+                  : 'bg-gray-700 text-gray-500 cursor-not-allowed'
+              }`}
+            >
+              {isGeneratingIcons ? (
+                <>
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  生成中...
+                </>
+              ) : (
+                <>
+                  <Image className="w-5 h-5" />
+                  4パターン生成
+                </>
+              )}
+            </button>
+            {!canGenerate && (
+              <p className="text-xs text-gray-500 text-center mt-2">
+                キャラタイプ・種類・雰囲気を入力すると生成できます
+              </p>
+            )}
+
+            {/* 生成プロンプトプレビュー */}
+            {canGenerate && (
+              <div className="mt-3 p-3 bg-gray-800 rounded-lg">
+                <p className="text-xs text-gray-400 mb-1">生成プロンプト:</p>
+                <p className="text-sm text-gray-300">{buildIconPrompt()}</p>
+              </div>
+            )}
+
+            {/* 生成結果表示 */}
+            {generatedIcons.length > 0 && (
+              <div className="mt-4 space-y-3">
+                <h4 className="text-sm font-medium text-cyan-300 flex items-center gap-2">
+                  <Image className="w-4 h-4" />
+                  生成結果（クリックで選択）
+                </h4>
+                <div className="grid grid-cols-2 gap-3">
+                  {generatedIcons.map((icon) => (
+                    <button
+                      key={icon.id}
+                      onClick={() => selectIcon(icon)}
+                      className={`relative aspect-square bg-gray-700 rounded-lg border-2 transition-all flex items-center justify-center ${
+                        data.selectedIconId === icon.id
+                          ? 'border-cyan-500 ring-2 ring-cyan-500/50'
+                          : 'border-gray-600 hover:border-cyan-400'
+                      }`}
+                    >
+                      {icon.url ? (
+                        <img src={icon.url} alt={`アイコン${icon.id}`} className="w-full h-full object-cover rounded-lg" />
+                      ) : (
+                        <div className="text-center p-4">
+                          <Image className="w-8 h-8 text-gray-500 mx-auto mb-2" />
+                          <p className="text-xs text-gray-500">パターン {icon.id}</p>
+                          <p className="text-xs text-gray-600 mt-1">（API連携後に表示）</p>
+                        </div>
+                      )}
+                      {data.selectedIconId === icon.id && (
+                        <div className="absolute top-2 right-2 bg-cyan-500 rounded-full p-1">
+                          <Check className="w-3 h-3 text-white" />
+                        </div>
+                      )}
+                    </button>
+                  ))}
+                </div>
+                {data.selectedIconId && data.selectedIconUrl && (
+                  <button
+                    className="w-full py-2 px-4 bg-cyan-600 hover:bg-cyan-700 rounded-lg flex items-center justify-center gap-2 text-white transition-all"
+                    onClick={() => downloadIcon(data.selectedIconUrl)}
+                  >
+                    <Download className="w-4 h-4" />
+                    選択したアイコンをダウンロード
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* 完了チェック */}
+            <div className="mt-4 space-y-3">
+              {completeFields.map(field => (
+                <React.Fragment key={field.id}>
+                  {renderFormField(field, stepId, data)}
+                </React.Fragment>
+              ))}
+            </div>
+
+            {/* 完了チェック表示 */}
+            {config.completionCheck && (
+              <div className={`mt-4 p-3 rounded-lg ${
+                config.completionCheck(data)
+                  ? 'bg-green-900/30 border border-green-500/50'
+                  : 'bg-gray-700/50 border border-gray-600'
+              }`}>
+                <div className="flex items-center gap-2">
+                  {config.completionCheck(data) ? (
+                    <>
+                      <Check className="w-5 h-5 text-green-500" />
+                      <span className="text-green-400">入力完了！</span>
+                    </>
+                  ) : (
+                    <>
+                      <div className="w-5 h-5 rounded-full border-2 border-gray-500" />
+                      <span className="text-gray-400">Threadsにアイコンを設定したらチェック</span>
                     </>
                   )}
                 </div>
@@ -710,60 +1478,68 @@ export default function Dashboard() {
       {/* やることリストタブ */}
       {activeTab === 'tasks' && (
         <div className="flex">
-          {/* サイドバー - フェーズ一覧 */}
-          <Sidebar
-            phases={phases}
-            expandedPhase={expandedPhase}
-            setExpandedPhase={setExpandedPhase}
-            showIntroSection={showIntroSection}
-            setShowIntroSection={setShowIntroSection}
-            expandedStepId={expandedStepId}
-            setExpandedStepId={setExpandedStepId}
-            selectedStep={selectedStep}
-            setSelectedStep={setSelectedStep}
-            selectedFieldId={selectedFieldId}
-            setSelectedFieldId={setSelectedFieldId}
-            userData={userData}
-            updateUserData={updateUserData}
-            mode={mode}
-            completeStep={completeStep}
-            skipStep={skipStep}
-            resetStepData={resetStepData}
-            showPatterns={showPatterns}
-            setShowPatterns={setShowPatterns}
-            showModules={showModules}
-            setShowModules={setShowModules}
-            showSafetyInfo={showSafetyInfo}
-            setShowSafetyInfo={setShowSafetyInfo}
-          />
+          {/* サイドバー + アイテムBOX */}
+          <div className="w-80 flex flex-col border-r border-gray-700">
+            <Sidebar
+              phases={phases}
+              expandedPhase={expandedPhase}
+              setExpandedPhase={setExpandedPhase}
+              showIntroSection={showIntroSection}
+              setShowIntroSection={setShowIntroSection}
+              expandedStepId={expandedStepId}
+              setExpandedStepId={setExpandedStepId}
+              selectedStep={selectedStep}
+              setSelectedStep={setSelectedStep}
+              selectedFieldId={selectedFieldId}
+              setSelectedFieldId={setSelectedFieldId}
+              userData={userData}
+              updateUserData={updateUserData}
+              mode={mode}
+              completeStep={completeStep}
+              skipStep={skipStep}
+              resetStepData={resetStepData}
+              showPatterns={showPatterns}
+              setShowPatterns={setShowPatterns}
+              showModules={showModules}
+              setShowModules={setShowModules}
+              showSafetyInfo={showSafetyInfo}
+              setShowSafetyInfo={setShowSafetyInfo}
+              showItemBox={showItemBox}
+              setShowItemBox={setShowItemBox}
+            />
+          </div>
 
           {/* メインコンテンツ */}
-          <PhaseDetail
-            showIntroSection={showIntroSection}
-            setShowIntroSection={setShowIntroSection}
-            setExpandedPhase={setExpandedPhase}
-            setAchievement={setAchievement}
-            showPatterns={showPatterns}
-            showModules={showModules}
-            showSafetyInfo={showSafetyInfo}
-            selectedStep={selectedStep}
-            setSelectedStep={setSelectedStep}
-            mode={mode}
-            renderStepForm={renderStepForm}
-            completeStep={completeStep}
-            skipStep={skipStep}
-            resetStepData={resetStepData}
-            activeTab={activeTab}
-            accounts={accounts}
-            setAccounts={setAccounts}
-            editingAccount={editingAccount}
-            setEditingAccount={setEditingAccount}
-            newAccount={newAccount}
-            setNewAccount={setNewAccount}
-            addAccount={addAccount}
-            updateAccount={updateAccount}
-            deleteAccount={deleteAccount}
-          />
+          {showItemBox ? (
+            <ItemBox />
+          ) : (
+            <PhaseDetail
+              showIntroSection={showIntroSection}
+              setShowIntroSection={setShowIntroSection}
+              setExpandedPhase={setExpandedPhase}
+              setAchievement={setAchievement}
+              showPatterns={showPatterns}
+              showModules={showModules}
+              showSafetyInfo={showSafetyInfo}
+              selectedStep={selectedStep}
+              setSelectedStep={setSelectedStep}
+              mode={mode}
+              renderStepForm={renderStepForm}
+              completeStep={completeStep}
+              skipStep={skipStep}
+              resetStepData={resetStepData}
+              activeTab={activeTab}
+              accounts={accounts}
+              setAccounts={setAccounts}
+              editingAccount={editingAccount}
+              setEditingAccount={setEditingAccount}
+              newAccount={newAccount}
+              setNewAccount={setNewAccount}
+              addAccount={addAccount}
+              updateAccount={updateAccount}
+              deleteAccount={deleteAccount}
+            />
+          )}
         </div>
       )}
 

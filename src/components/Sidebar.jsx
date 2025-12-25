@@ -42,9 +42,11 @@ export default function Sidebar({
   setShowModules,
   showSafetyInfo,
   setShowSafetyInfo,
+  showItemBox,
+  setShowItemBox,
 }) {
   return (
-    <aside className="w-80 bg-gray-800 min-h-screen max-h-screen overflow-y-auto border-r border-gray-700 p-4">
+    <aside className="flex-1 bg-gray-800 overflow-y-auto p-4">
       <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">
         クエスト
       </h2>
@@ -169,6 +171,7 @@ export default function Sidebar({
             setShowPatterns(!showPatterns);
             setShowModules(false);
             setShowSafetyInfo(false);
+            setShowItemBox(false);
             setSelectedStep(null);
             setShowIntroSection(false);
           }}
@@ -188,6 +191,7 @@ export default function Sidebar({
             setShowModules(!showModules);
             setShowPatterns(false);
             setShowSafetyInfo(false);
+            setShowItemBox(false);
             setSelectedStep(null);
             setShowIntroSection(false);
           }}
@@ -210,6 +214,7 @@ export default function Sidebar({
               setShowModules(false);
               setSelectedStep(null);
               setShowIntroSection(false);
+              setShowItemBox(false);
             }}
             className={`w-full flex items-center gap-3 p-3 rounded-lg transition-all ${
               showSafetyInfo ? 'bg-red-600/20 border border-red-500/50' : 'bg-gray-750 hover:bg-gray-700'
@@ -222,6 +227,28 @@ export default function Sidebar({
             {showSafetyInfo && <ChevronRight className="w-4 h-4 text-red-400" />}
           </button>
         )}
+
+        {/* 冒険のカバン */}
+        <button
+          onClick={() => {
+            setShowItemBox(!showItemBox);
+            setShowPatterns(false);
+            setShowModules(false);
+            setShowSafetyInfo(false);
+            setSelectedStep(null);
+            setShowIntroSection(false);
+            setExpandedPhase(null);
+          }}
+          className={`w-full flex items-center gap-3 p-3 rounded-lg transition-all ${
+            showItemBox ? 'bg-amber-600/20 border border-amber-500/50' : 'bg-gray-750 hover:bg-gray-700'
+          }`}
+        >
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center">
+            <span className="text-lg">🎒</span>
+          </div>
+          <span className="flex-1 text-left font-medium">冒険のカバン</span>
+          {showItemBox && <ChevronRight className="w-4 h-4 text-amber-400" />}
+        </button>
       </div>
     </aside>
   );
