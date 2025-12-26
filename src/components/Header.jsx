@@ -1,5 +1,5 @@
 import React from 'react';
-import { Sparkles, Shield, Zap, Eye, EyeOff, RotateCcw, FileText, Key } from 'lucide-react';
+import { Sparkles, Shield, Zap, Eye, EyeOff, RotateCcw, FileText, Key, ClipboardList } from 'lucide-react';
 
 export default function Header({
   mode,
@@ -100,6 +100,17 @@ export default function Header({
         >
           <Key className="w-4 h-4" />
           アカウント情報
+        </button>
+        <button
+          onClick={() => setActiveTab('management')}
+          className={`px-4 py-2 rounded-lg text-sm flex items-center gap-2 transition-all ${
+            activeTab === 'management'
+              ? 'bg-blue-600 text-white'
+              : 'bg-gray-700 text-gray-400 hover:text-white'
+          }`}
+        >
+          <ClipboardList className="w-4 h-4" />
+          一元管理表
         </button>
       </div>
 

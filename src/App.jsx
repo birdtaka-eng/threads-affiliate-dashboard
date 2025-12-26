@@ -4,6 +4,7 @@ import Header from './components/Header';
 import Sidebar from './components/Sidebar';
 import PhaseDetail from './components/PhaseDetail';
 import ItemBox from './components/ItemBox';
+import ManagementTable from './components/ManagementTable';
 import { stepFormConfigs, initialPhases, STORAGE_KEYS } from './data/config';
 
 // URLテーブルコンポーネント
@@ -1571,6 +1572,11 @@ export default function Dashboard() {
           updateAccount={updateAccount}
           deleteAccount={deleteAccount}
         />
+      )}
+
+      {/* 一元管理表タブ */}
+      {activeTab === 'management' && (
+        <ManagementTable />
       )}
     </div>
   );
