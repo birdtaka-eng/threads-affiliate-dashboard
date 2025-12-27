@@ -34,18 +34,16 @@ export default function Header({
           <div className="flex items-center gap-2 bg-gray-700 rounded-lg p-1">
             <button
               onClick={() => setMode('beginner')}
-              className={`px-3 py-1.5 rounded-md text-sm flex items-center gap-1.5 transition-all ${
-                mode === 'beginner' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'
-              }`}
+              className={`px-3 py-1.5 rounded-md text-sm flex items-center gap-1.5 transition-all ${mode === 'beginner' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'
+                }`}
             >
               <Shield className="w-4 h-4" />
               初心者
             </button>
             <button
               onClick={() => setMode('expert')}
-              className={`px-3 py-1.5 rounded-md text-sm flex items-center gap-1.5 transition-all ${
-                mode === 'expert' ? 'bg-purple-600 text-white' : 'text-gray-400 hover:text-white'
-              }`}
+              className={`px-3 py-1.5 rounded-md text-sm flex items-center gap-1.5 transition-all ${mode === 'expert' ? 'bg-purple-600 text-white' : 'text-gray-400 hover:text-white'
+                }`}
             >
               <Zap className="w-4 h-4" />
               エキスパート
@@ -55,15 +53,14 @@ export default function Header({
           {/* ヒント表示ON/OFF */}
           <button
             onClick={() => setShowHints(!showHints)}
-            className={`px-3 py-1.5 rounded-lg text-sm flex items-center gap-1.5 transition-all border ${
-              showHints
-                ? 'bg-yellow-900/30 text-yellow-400 border-yellow-500/30 hover:bg-yellow-900/50'
-                : 'bg-gray-700 text-gray-400 border-gray-600 hover:bg-gray-600'
-            }`}
+            className={`px-3 py-1.5 rounded-lg text-sm flex items-center gap-1.5 transition-all border ${showHints
+              ? 'bg-yellow-900/30 text-yellow-400 border-yellow-500/30 hover:bg-yellow-900/50'
+              : 'bg-gray-700 text-gray-400 border-gray-600 hover:bg-gray-600'
+              }`}
             title={showHints ? 'ヒント表示をOFFにする' : 'ヒント表示をONにする'}
           >
             {showHints ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-            💬 ヒント{showHints ? 'ON' : 'OFF'}
+            💬 ヒント{showHints ? 'あり' : 'なし'}
           </button>
 
           {/* 設定リセットボタン */}
@@ -81,33 +78,30 @@ export default function Header({
       <div className="flex gap-2 mt-4">
         <button
           onClick={() => setActiveTab('tasks')}
-          className={`px-4 py-2 rounded-lg text-sm flex items-center gap-2 transition-all ${
-            activeTab === 'tasks'
-              ? 'bg-blue-600 text-white'
-              : 'bg-gray-700 text-gray-400 hover:text-white'
-          }`}
+          className={`px-4 py-2 rounded-lg text-sm flex items-center gap-2 transition-all ${activeTab === 'tasks'
+            ? 'bg-blue-600 text-white'
+            : 'bg-gray-700 text-gray-400 hover:text-white'
+            }`}
         >
           <FileText className="w-4 h-4" />
           やることリスト
         </button>
         <button
           onClick={() => setActiveTab('accounts')}
-          className={`px-4 py-2 rounded-lg text-sm flex items-center gap-2 transition-all ${
-            activeTab === 'accounts'
-              ? 'bg-blue-600 text-white'
-              : 'bg-gray-700 text-gray-400 hover:text-white'
-          }`}
+          className={`px-4 py-2 rounded-lg text-sm flex items-center gap-2 transition-all ${activeTab === 'accounts'
+            ? 'bg-blue-600 text-white'
+            : 'bg-gray-700 text-gray-400 hover:text-white'
+            }`}
         >
           <Key className="w-4 h-4" />
           アカウント情報
         </button>
         <button
           onClick={() => setActiveTab('management')}
-          className={`px-4 py-2 rounded-lg text-sm flex items-center gap-2 transition-all ${
-            activeTab === 'management'
-              ? 'bg-blue-600 text-white'
-              : 'bg-gray-700 text-gray-400 hover:text-white'
-          }`}
+          className={`px-4 py-2 rounded-lg text-sm flex items-center gap-2 transition-all ${activeTab === 'management'
+            ? 'bg-blue-600 text-white'
+            : 'bg-gray-700 text-gray-400 hover:text-white'
+            }`}
         >
           <ClipboardList className="w-4 h-4" />
           一元管理表
@@ -127,7 +121,7 @@ export default function Header({
             }}
             title="クリックで達成演出テスト"
           >
-            <span className="pixel-font text-yellow-400 text-xs">LV.</span>
+            <span className="pixel-font text-yellow-400 text-xs">レベル</span>
             <span className="pixel-font text-yellow-300 text-lg">{Math.floor(calculateProgress() / 10) + 1}</span>
           </div>
 
@@ -135,7 +129,7 @@ export default function Header({
           <div className="flex-1">
             <div className="flex items-center justify-between text-xs mb-1">
               <span className="text-gray-400 flex items-center gap-1">
-                <span className="text-yellow-500">⚔️</span> EXP
+                <span className="text-yellow-500">⚔️</span> 経験値
               </span>
               <span className="pixel-font text-yellow-400 text-[10px]">{calculateProgress()}%</span>
             </div>
@@ -149,7 +143,7 @@ export default function Header({
 
           {/* 次のレベルまで */}
           <div className="text-xs text-gray-500">
-            <span className="text-gray-400">NEXT</span>
+            <span className="text-gray-400">次まで</span>
             <span className="pixel-font text-[10px] text-yellow-500 ml-1">{10 - (calculateProgress() % 10)}%</span>
           </div>
         </div>
