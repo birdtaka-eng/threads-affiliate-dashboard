@@ -47,11 +47,10 @@ function URLTableField({ field, value, onChange, placeholder }) {
         <button
           onClick={addUrl}
           disabled={!newUrl.trim()}
-          className={`px-4 py-2 rounded-lg flex items-center gap-1 font-medium transition-all ${
-            newUrl.trim()
-              ? 'bg-blue-600 hover:bg-blue-700 text-white'
-              : 'bg-gray-700 text-gray-500 cursor-not-allowed'
-          }`}
+          className={`px-4 py-2 rounded-lg flex items-center gap-1 font-medium transition-all ${newUrl.trim()
+            ? 'bg-blue-600 hover:bg-blue-700 text-white'
+            : 'bg-gray-700 text-gray-500 cursor-not-allowed'
+            }`}
         >
           <Plus className="w-4 h-4" />
           追加
@@ -161,11 +160,10 @@ function RakutenProductTable({ value, onChange, placeholder }) {
         <button
           onClick={addProduct}
           disabled={!newUrl.trim()}
-          className={`px-4 py-2 rounded-lg flex items-center gap-1 font-medium transition-all ${
-            newUrl.trim()
-              ? 'bg-blue-600 hover:bg-blue-700 text-white'
-              : 'bg-gray-700 text-gray-500 cursor-not-allowed'
-          }`}
+          className={`px-4 py-2 rounded-lg flex items-center gap-1 font-medium transition-all ${newUrl.trim()
+            ? 'bg-blue-600 hover:bg-blue-700 text-white'
+            : 'bg-gray-700 text-gray-500 cursor-not-allowed'
+            }`}
         >
           <Plus className="w-4 h-4" />
           追加
@@ -821,7 +819,7 @@ export default function Dashboard() {
         return (
           <div className="space-y-1">
             <div className="flex items-center gap-3 p-3 bg-gray-700/50 rounded-lg cursor-pointer hover:bg-gray-700 transition-all"
-                 onClick={() => updateUserData(stepId, field.id, !value)}>
+              onClick={() => updateUserData(stepId, field.id, !value)}>
               <input
                 type="checkbox"
                 checked={!!value}
@@ -872,7 +870,24 @@ export default function Dashboard() {
       case 'textarea':
         return (
           <div className="space-y-1">
-            <QuestionLabel />
+            <div className="flex justify-between items-end">
+              <QuestionLabel />
+              {/* デフォルト値適用ボタン */}
+              {field.defaultValue && (
+                <button
+                  onClick={() => {
+                    if (!value || window.confirm('現在の入力を推奨設定（デフォルト値）で上書きしますか？')) {
+                      updateUserData(stepId, field.id, field.defaultValue);
+                    }
+                  }}
+                  className="text-xs flex items-center gap-1 text-amber-400 hover:text-amber-300 bg-amber-900/30 hover:bg-amber-900/50 px-2 py-1 rounded transition-all mb-2 border border-amber-500/30"
+                  title="システム推奨のプロンプトや設定を読み込みます"
+                >
+                  <Sparkles className="w-3 h-3" />
+                  推奨設定をロード
+                </button>
+              )}
+            </div>
             {isExplanationOpen && renderExplanationPopup(field, () => setOpenExplanation(null))}
             <textarea
               value={value}
@@ -1112,15 +1127,13 @@ export default function Dashboard() {
             {activeWarnings.map((warning, idx) => (
               <div
                 key={idx}
-                className={`mb-4 p-3 rounded-lg flex items-start gap-2 ${
-                  warning.type === 'error'
-                    ? 'bg-red-900/30 border border-red-500/50'
-                    : 'bg-yellow-900/30 border border-yellow-500/50'
-                }`}
+                className={`mb-4 p-3 rounded-lg flex items-start gap-2 ${warning.type === 'error'
+                  ? 'bg-red-900/30 border border-red-500/50'
+                  : 'bg-yellow-900/30 border border-yellow-500/50'
+                  }`}
               >
-                <AlertTriangle className={`w-5 h-5 flex-shrink-0 mt-0.5 ${
-                  warning.type === 'error' ? 'text-red-500' : 'text-yellow-500'
-                }`} />
+                <AlertTriangle className={`w-5 h-5 flex-shrink-0 mt-0.5 ${warning.type === 'error' ? 'text-red-500' : 'text-yellow-500'
+                  }`} />
                 <span className={`text-sm ${warning.type === 'error' ? 'text-red-400' : 'text-yellow-400'}`}>
                   {warning.message}
                 </span>
@@ -1146,11 +1159,10 @@ export default function Dashboard() {
             <button
               onClick={generateProfile}
               disabled={!canGenerate}
-              className={`w-full py-3 px-4 rounded-lg flex items-center justify-center gap-2 font-medium transition-all ${
-                canGenerate
-                  ? 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white'
-                  : 'bg-gray-700 text-gray-500 cursor-not-allowed'
-              }`}
+              className={`w-full py-3 px-4 rounded-lg flex items-center justify-center gap-2 font-medium transition-all ${canGenerate
+                ? 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white'
+                : 'bg-gray-700 text-gray-500 cursor-not-allowed'
+                }`}
             >
               <Sparkles className="w-5 h-5" />
               10パターン生成
@@ -1212,11 +1224,10 @@ export default function Dashboard() {
 
             {/* 完了チェック表示 */}
             {config.completionCheck && (
-              <div className={`mt-4 p-3 rounded-lg ${
-                config.completionCheck(data)
-                  ? 'bg-green-900/30 border border-green-500/50'
-                  : 'bg-gray-700/50 border border-gray-600'
-              }`}>
+              <div className={`mt-4 p-3 rounded-lg ${config.completionCheck(data)
+                ? 'bg-green-900/30 border border-green-500/50'
+                : 'bg-gray-700/50 border border-gray-600'
+                }`}>
                 <div className="flex items-center gap-2">
                   {config.completionCheck(data) ? (
                     <>
@@ -1265,11 +1276,10 @@ export default function Dashboard() {
             <button
               onClick={generateIcon}
               disabled={!canGenerate || isGeneratingIcons}
-              className={`w-full py-3 px-4 rounded-lg flex items-center justify-center gap-2 font-medium transition-all ${
-                canGenerate && !isGeneratingIcons
-                  ? 'bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white'
-                  : 'bg-gray-700 text-gray-500 cursor-not-allowed'
-              }`}
+              className={`w-full py-3 px-4 rounded-lg flex items-center justify-center gap-2 font-medium transition-all ${canGenerate && !isGeneratingIcons
+                ? 'bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white'
+                : 'bg-gray-700 text-gray-500 cursor-not-allowed'
+                }`}
             >
               {isGeneratingIcons ? (
                 <>
@@ -1309,11 +1319,10 @@ export default function Dashboard() {
                     <button
                       key={icon.id}
                       onClick={() => selectIcon(icon)}
-                      className={`relative aspect-square bg-gray-700 rounded-lg border-2 transition-all flex items-center justify-center ${
-                        data.selectedIconId === icon.id
-                          ? 'border-cyan-500 ring-2 ring-cyan-500/50'
-                          : 'border-gray-600 hover:border-cyan-400'
-                      }`}
+                      className={`relative aspect-square bg-gray-700 rounded-lg border-2 transition-all flex items-center justify-center ${data.selectedIconId === icon.id
+                        ? 'border-cyan-500 ring-2 ring-cyan-500/50'
+                        : 'border-gray-600 hover:border-cyan-400'
+                        }`}
                     >
                       {icon.url ? (
                         <img src={icon.url} alt={`アイコン${icon.id}`} className="w-full h-full object-cover rounded-lg" />
@@ -1355,11 +1364,10 @@ export default function Dashboard() {
 
             {/* 完了チェック表示 */}
             {config.completionCheck && (
-              <div className={`mt-4 p-3 rounded-lg ${
-                config.completionCheck(data)
-                  ? 'bg-green-900/30 border border-green-500/50'
-                  : 'bg-gray-700/50 border border-gray-600'
-              }`}>
+              <div className={`mt-4 p-3 rounded-lg ${config.completionCheck(data)
+                ? 'bg-green-900/30 border border-green-500/50'
+                : 'bg-gray-700/50 border border-gray-600'
+                }`}>
                 <div className="flex items-center gap-2">
                   {config.completionCheck(data) ? (
                     <>
@@ -1392,15 +1400,13 @@ export default function Dashboard() {
           {activeWarnings.map((warning, idx) => (
             <div
               key={idx}
-              className={`mb-4 p-3 rounded-lg flex items-start gap-2 ${
-                warning.type === 'error'
-                  ? 'bg-red-900/30 border border-red-500/50'
-                  : 'bg-yellow-900/30 border border-yellow-500/50'
-              }`}
+              className={`mb-4 p-3 rounded-lg flex items-start gap-2 ${warning.type === 'error'
+                ? 'bg-red-900/30 border border-red-500/50'
+                : 'bg-yellow-900/30 border border-yellow-500/50'
+                }`}
             >
-              <AlertTriangle className={`w-5 h-5 flex-shrink-0 mt-0.5 ${
-                warning.type === 'error' ? 'text-red-500' : 'text-yellow-500'
-              }`} />
+              <AlertTriangle className={`w-5 h-5 flex-shrink-0 mt-0.5 ${warning.type === 'error' ? 'text-red-500' : 'text-yellow-500'
+                }`} />
               <span className={`text-sm ${warning.type === 'error' ? 'text-red-400' : 'text-yellow-400'}`}>
                 {warning.message}
               </span>
@@ -1417,11 +1423,10 @@ export default function Dashboard() {
 
           {/* 完了チェック表示 */}
           {config.completionCheck && (
-            <div className={`mt-4 p-3 rounded-lg ${
-              config.completionCheck(data)
-                ? 'bg-green-900/30 border border-green-500/50'
-                : 'bg-gray-700/50 border border-gray-600'
-            }`}>
+            <div className={`mt-4 p-3 rounded-lg ${config.completionCheck(data)
+              ? 'bg-green-900/30 border border-green-500/50'
+              : 'bg-gray-700/50 border border-gray-600'
+              }`}>
               <div className="flex items-center gap-2">
                 {config.completionCheck(data) ? (
                   <>
@@ -1576,7 +1581,7 @@ export default function Dashboard() {
 
       {/* 一元管理表タブ */}
       {activeTab === 'management' && (
-        <ManagementTable />
+        <ManagementTable userData={userData} />
       )}
     </div>
   );

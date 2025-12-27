@@ -2,12 +2,12 @@
 import React, { useState, useEffect } from 'react';
 import {
   ClipboardList, Plus, Trash2, Edit3, Check, X,
-  ExternalLink, Copy, Calendar, Link as LinkIcon
+  ExternalLink, Copy, Calendar, Link as LinkIcon, Sparkles, Search, DownloadCloud, Image as ImageIcon, UploadCloud
 } from 'lucide-react';
 
 const STORAGE_KEY = 'threads-affiliate-management';
 
-export default function ManagementTable() {
+export default function ManagementTable(props) {
   const [items, setItems] = useState(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
@@ -22,6 +22,117 @@ export default function ManagementTable() {
   const [editingField, setEditingField] = useState(null);
   const [editValue, setEditValue] = useState('');
   const [copied, setCopied] = useState(null);
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  // 検索関連のState
+  const [searchKeyword, setSearchKeyword] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
+
+  // Threads検索して自動追加
+  const searchAndImport = async () => {
+    if (!searchKeyword) return;
+
+    setIsSearching(true);
+    try {
+      const response = await fetch(`/api/search-threads?q=${encodeURIComponent(searchKeyword)}&limit=10`);
+      const data = await response.json();
+
+      if (data.success && data.posts && data.posts.length > 0) {
+        const newItems = data.posts.map(post => ({
+          id: Date.now() + Math.random(), // ユニークID確保
+          buzzUrl: post.buzzUrl,
+          rakutenUrl: '', // 後で手動入力
+          postText: '', // 後で生成
+          scheduleTime: '',
+          status: 'draft',
+          type: 'product',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          // メモとして元のテキストを保持してもいいが、今回はシンプルに
+        }));
+
+        setItems(prev => [...newItems, ...prev]);
+        alert(`${newItems.length}件の投稿を取り込みました！`);
+        setSearchKeyword('');
+      } else {
+        alert('投稿が見つかりませんでした。');
+      }
+    } catch (error) {
+      console.error('Search error:', error);
+      alert('検索中にエラーが発生しました。');
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  // Gemini APIで投稿文を生成
+  const generatePostText = async (item) => {
+    // 必須チェック（どれか一つあればOKにする柔軟性を持たせるが、最低限のネタは必要）
+    if (!item.buzzUrl && !item.rakutenUrl && !item.referenceText && !item.image) {
+      alert('情報を入力してください（URL、参考テキスト、画像のいずれか）');
+      return;
+    }
+
+    setIsGenerating(true);
+    try {
+      // 共通設定からプロンプトを取得 (1-5: AI生成指示設定)
+      const globalCustomPrompt = props.userData?.['1-5']?.globalCustomPrompt;
+      // 個別のcustomPromptは廃止したが、念のため後方互換でチェック（または無視）
+      // ここではGlobal設定を優先利用する
+
+      // 画像が設定されている場合、Base64に変換
+      let imageBase64 = null;
+      if (item.image instanceof File) {
+        imageBase64 = await new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result);
+          reader.readAsDataURL(item.image);
+        });
+      } else if (typeof item.image === 'string' && item.image.startsWith('data:')) {
+        // 既にBase64文字列の場合
+        imageBase64 = item.image;
+      }
+
+      const response = await fetch('http://localhost:3001/api/generate-post-text', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          style: item.postStyle || 'rewrite',
+          referenceText: item.referenceText || '',
+          customPrompt: globalCustomPrompt || '', // 共通設定を送信
+          modelName: props.userData?.['1-5']?.modelName || 'gemini-1.5-pro', // モデル指定 (デフォルト: 1.5 Pro)
+          rakutenUrl: item.rakutenUrl || '',
+          image: imageBase64,
+          characterSettings: props.userData // ペルソナ情報全体も送る
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        if (Array.isArray(data.text)) {
+          // 3パターン返ってきた場合
+          updateField(item.id, 'candidates', data.text);
+          // デフォルトで最初のパターンを入れておく（または空にして選択させる）
+          // updateField(item.id, 'postText', data.text[0].text);
+          alert('3つのパターンが生成されました！好みのものを選択してください。');
+        } else {
+          // 文字列で返ってきた場合（フォールバック）
+          updateField(item.id, 'postText', data.text);
+          alert('投稿文を生成しました！');
+        }
+      } else {
+        alert('生成に失敗しました: ' + (data.error || '不明なエラー'));
+      }
+    } catch (error) {
+      console.error('Generation error:', error);
+      alert('生成中にエラーが発生しました');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   // localStorage保存
   useEffect(() => {
@@ -34,7 +145,12 @@ export default function ManagementTable() {
       id: Date.now(),
       buzzUrl: '',       // バズった投稿URL
       rakutenUrl: '',    // 楽天商品URL
+      referenceText: '', // 参考テキスト（バズ構文メモなど）
+      customPrompt: '',  // カスタム指示（プロンプト）
+      postStyle: 'rewrite', // 投稿スタイル
+      image: null,       // アップロード画像
       postText: '',      // 投稿文
+      candidates: [],    // 生成された候補リスト
       scheduleTime: '',  // 投稿予定日時
       status: 'draft',
       type: 'product',
@@ -173,6 +289,31 @@ export default function ManagementTable() {
           <h1 className="text-xl font-bold text-white">一元管理表</h1>
           <span className="text-sm text-gray-400">({items.length}件)</span>
         </div>
+        <div className="flex items-center gap-2">
+          <div className="relative">
+            <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              value={searchKeyword}
+              onChange={(e) => setSearchKeyword(e.target.value)}
+              placeholder="キーワードで自動取込..."
+              className="pl-9 pr-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-sm text-white focus:ring-2 focus:ring-blue-500 outline-none w-64 transition-all"
+              onKeyDown={(e) => e.key === 'Enter' && searchAndImport()}
+            />
+          </div>
+          <button
+            onClick={searchAndImport}
+            disabled={isSearching || !searchKeyword}
+            className={`px-4 py-2 rounded-lg text-white font-medium flex items-center gap-2 transition-all ${isSearching || !searchKeyword
+              ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
+              : 'bg-green-600 hover:bg-green-700'
+              }`}
+          >
+            {isSearching ? <span className="animate-spin">⌛</span> : <DownloadCloud className="w-4 h-4" />}
+            {isSearching ? '検索中...' : '自動取込'}
+          </button>
+        </div>
+
         <button
           onClick={addItem}
           className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white font-medium flex items-center gap-2 transition-all"
@@ -189,8 +330,8 @@ export default function ManagementTable() {
             <thead>
               <tr className="bg-gray-750 border-b border-gray-600">
                 <th className="text-left py-3 px-4 text-gray-400 font-medium w-12">No.</th>
-                <th className="text-left py-3 px-4 text-gray-400 font-medium w-64">バズ投稿URL (参考)</th>
-                <th className="text-left py-3 px-4 text-gray-400 font-medium w-64">楽天商品URL</th>
+                <th className="text-left py-3 px-4 text-gray-400 font-medium w-64">バズ投稿URL / 生成設定</th>
+                <th className="text-left py-3 px-4 text-gray-400 font-medium w-64">楽天商品URL / 画像</th>
                 <th className="text-left py-3 px-4 text-gray-400 font-medium">投稿文 (生成予定)</th>
                 <th className="text-left py-3 px-4 text-gray-400 font-medium w-48">投稿予定日時</th>
                 <th className="text-left py-3 px-4 text-gray-400 font-medium w-24">ステータス</th>
@@ -205,14 +346,100 @@ export default function ManagementTable() {
                 >
                   <td className="py-3 px-4 text-gray-500">{items.length - index}</td>
 
-                  {/* バズ投稿URL */}
-                  <td className="py-3 px-4">
-                    {renderUrlField(item, 'buzzUrl', 'スレッズ投稿URLを入力...', <LinkIcon className="w-3 h-3" />)}
+                  {/* バズ投稿URL / 参考文 */}
+                  <td className="py-3 px-4 space-y-2">
+                    {renderUrlField(item, 'buzzUrl', 'スレッズ投稿URL...', <LinkIcon className="w-3 h-3" />)}
+
+                    {/* 参考テキストエリア */}
+                    {editingId === item.id && editingField === 'referenceText' ? (
+                      <div className="flex gap-1 items-start min-w-[200px]">
+                        <textarea
+                          value={editValue}
+                          onChange={(e) => setEditValue(e.target.value)}
+                          className="flex-1 bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white text-xs resize-none"
+                          rows={2}
+                          autoFocus
+                          placeholder="参考にする文章..."
+                        />
+                        <button onClick={saveEdit} className="p-1 text-green-400 hover:bg-gray-600 rounded"><Check className="w-3 h-3" /></button>
+                      </div>
+                    ) : (
+                      <div
+                        className="text-xs text-gray-500 cursor-pointer hover:text-gray-300 truncate max-w-[200px] border-t border-gray-700 pt-1 mt-1"
+                        onClick={() => startEdit(item.id, 'referenceText', item.referenceText)}
+                      >
+                        {item.referenceText || '＋参考メモを追加'}
+                      </div>
+                    )}
+
+                    {/* AI生成ボタン & カスタム指示 (編集中でない場合のみ表示) */}
+                    {(!editingId || editingId !== item.id) && (
+                      <div className="mt-4 border-t border-gray-700 pt-2 space-y-2">
+                        {/* スタイル選択 & 生成ボタン */}
+                        <div className="flex items-center gap-2 justify-between">
+                          <select
+                            value={item.postStyle || 'rewrite'}
+                            onChange={(e) => updateField(item.id, 'postStyle', e.target.value)}
+                            className="bg-gray-700 border border-gray-600 text-gray-300 text-xs rounded px-1 py-1 outline-none focus:border-blue-500 max-w-[120px]"
+                          >
+                            <option value="rewrite">構造トレース</option>
+                            <option value="empathy">共感・ネタ</option>
+                            <option value="review">商品レビュー</option>
+                          </select>
+
+                          <button
+                            onClick={() => generatePostText(item)}
+                            disabled={isGenerating}
+                            className={`text-xs flex items-center gap-1 px-2 py-1 rounded border transition-all ${isGenerating
+                              ? 'bg-gray-700 text-gray-500 border-gray-600 cursor-not-allowed'
+                              : 'bg-purple-900/30 text-purple-300 border-purple-500/30 hover:bg-purple-900/50 hover:text-purple-200'
+                              }`}
+                          >
+                            <Sparkles className="w-3 h-3" />
+                            {isGenerating ? '...' : '生成'}
+                          </button>
+                        </div>
+                        {item.postStyle === 'rewrite' && (
+                          <div className="text-[10px] text-gray-500 mt-1">
+                            ※「やることリスト 1-5」の設定を使用します
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </td>
 
-                  {/* 楽天商品URL */}
-                  <td className="py-3 px-4">
-                    {renderUrlField(item, 'rakutenUrl', '楽天商品URLを入力...', <ExternalLink className="w-3 h-3" />)}
+                  {/* 楽天商品URL / 画像 */}
+                  <td className="py-3 px-4 space-y-2">
+                    {renderUrlField(item, 'rakutenUrl', '楽天商品URL...', < ExternalLink className="w-3 h-3" />)}
+
+                    {/* 画像アップロード */}
+                    <div className="flex items-center gap-2 mt-1">
+                      <label className="cursor-pointer flex items-center gap-1 text-xs text-gray-500 hover:text-blue-400 px-2 py-1 rounded hover:bg-gray-700 border border-transparent hover:border-gray-600 transition-all">
+                        <ImageIcon className="w-3 h-3" />
+                        <span>{item.image ? '画像あり' : '画像追加'}</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => {
+                            const file = e.target.files[0];
+                            if (file) {
+                              // ファイルオブジェクトを直接保存（シリアライズできないので注意が必要だが、今回は簡易的に）
+                              // 本来はBase64化してStateに入れるか、一時保存すべき
+                              updateField(item.id, 'image', file);
+                            }
+                          }}
+                        />
+                      </label>
+                      {item.image && (
+                        <button
+                          onClick={() => updateField(item.id, 'image', null)}
+                          className="text-gray-500 hover:text-red-400"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      )}
+                    </div>
                   </td>
 
                   {/* 投稿文 */}
@@ -246,10 +473,35 @@ export default function ManagementTable() {
                         </p>
                       </div>
                     )}
+
+                    {/* 候補選択UI */}
+                    {item.candidates && item.candidates.length > 0 && (!editingId || editingId !== item.id) && (
+                      <div className="mt-2 space-y-2">
+                        <div className="text-[10px] text-gray-500 font-medium">✨ 生成された候補 (クリックで採用)</div>
+                        <div className="space-y-1">
+                          {item.candidates.map((cand, idx) => (
+                            <button
+                              key={idx}
+                              onClick={() => {
+                                updateField(item.id, 'postText', cand.text);
+                                // 採用したら候補はクリアしてもいいが、再選択できるように残す
+                              }}
+                              className="w-full text-left p-2 rounded bg-gray-800 border border-gray-700 hover:border-blue-500 hover:bg-gray-750 transition-all group"
+                            >
+                              <div className="flex justify-between items-center mb-1">
+                                <span className="text-xs font-bold text-blue-300">{cand.title}</span>
+                                {item.postText === cand.text && <Check className="w-3 h-3 text-green-500" />}
+                              </div>
+                              <p className="text-xs text-gray-400 line-clamp-2 group-hover:text-gray-200">{cand.text}</p>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </td>
 
                   {/* 投稿予定日時 */}
-                  <td className="py-3 px-4">
+                  < td className="py-3 px-4" >
                     {editingId === item.id && editingField === 'scheduleTime' ? (
                       <div className="flex gap-1 items-center">
                         <input
@@ -306,7 +558,7 @@ export default function ManagementTable() {
             </tbody>
           </table>
         </div>
-      </div>
-    </div>
+      </div >
+    </div >
   );
 }

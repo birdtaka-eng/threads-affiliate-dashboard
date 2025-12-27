@@ -297,6 +297,60 @@ export const stepFormConfigs = {
     ],
     completionCheck: (data) => data?.iconSet,
   },
+  '1-5': {
+    fields: [
+      {
+        id: 'modelName',
+        label: '使用するAIモデル',
+        type: 'select',
+        question: 'どのAIモデルを使用しますか？',
+        explanation: '「gemini-1.5-flash」が標準です。\n回答精度に不満がある場合は、より高性能な「pro」や最新の「2.0」を試してみてください。',
+        options: [
+          { value: 'gemini-1.5-flash', label: 'Gemini 1.5 Flash (標準・高速)' },
+          { value: 'gemini-1.5-pro', label: 'Gemini 1.5 Pro (高精度)' },
+          { value: 'gemini-2.0-flash-exp', label: 'Gemini 2.0 Flash (実験用プレビュー)' },
+        ],
+        defaultValue: 'gemini-1.5-pro'
+      },
+      {
+        id: 'globalCustomPrompt',
+        label: 'AI生成指示（共通プロンプト）',
+        type: 'textarea',
+        question: 'AIにどのような視点で文章を作らせますか？',
+        explanation: '「面白さの構造抽出」など、すべての投稿生成に使われる基本指示を入力します。\nここの設定が「一元管理表」での生成時に適用されます。',
+        placeholder: '【分析ステップ】\n1. [参考テキスト]を読み込み、「なぜ面白いのか」という構造だけを抽出する。\n...',
+        rows: 10,
+        defaultValue: `# Role:
+あなたは、Threadsで「日常の観察家」として愛される文筆家です。
+他人の投稿から「共感の種」を見つけ出し、それを自分の人格（優しさ・知性・ユーモア）というフィルターを通して、全く新しいオリジナル小話に変換する専門家です。
+
+# Context:
+ユーザーが「人気の投稿ネタ」を入力します。あなたはその内容を分析し、以下の【人格】と【変換ルール】に従って、お茶会で話すような心地よい文章を作成してください。
+
+# 保持すべき人格:
+- **等身大の優しさ**: 完璧ではない自分を認め、読者の心に寄り添う。
+- **控えめなユーモア**: 派手な笑いではなく、静かな「くすっ」を誘う。
+- **モノへの愛**: 雑貨や日常の道具に対する、独自のこだわりや視点を持っている。
+
+# 変換・再構築のステップ:
+1. 【エッセンスの抽出】: その投稿がなぜ支持されたのか（例：自虐、あるある、逆転の発想など）を分析する。
+2. 【人格の憑依】: そのネタを「雑貨好きで、少しおっちょこちょいな私」が体験したらどうなるか？を想像する。
+3. 【独自の視点の追加】: 人気ネタの結論をなぞるのではなく、あなたらしい「独自のオチ（優しさのある着地）」に変える。
+
+# 制約事項:
+- 元ネタのコピペは厳禁。必ず自分の言葉で「体験談」として書き直す。
+- 読後感が「この人の明日も楽しみだな」となるように、トーンを整える。
+- 煽り、攻撃、過度な自慢は排除する。
+
+# Input (元ネタ):
+後述する [参考テキスト] を参照してください。
+
+# Output:
+元ネタの「面白さの構造」を活かしつつ、あなたの人格で書き直した「新しい小ネタ」を2案提示してください。`
+      }
+    ],
+    completionCheck: (data) => !!data?.globalCustomPrompt,
+  },
   '2-4': {
     fields: [
       {
@@ -628,6 +682,7 @@ export const initialPhases = [
       { id: '1-2', name: 'ターゲット設定', status: 'locked', description: '届けたい層を明確にする', hasAI: true },
       { id: '1-3', name: 'プロフィール作成', status: 'locked', description: '名前・自己紹介文を作成', hasAI: true },
       { id: '1-4', name: 'アイコン準備', status: 'locked', description: 'アイコン画像を用意', hasAI: true },
+      { id: '1-5', name: 'AI生成指示設定', status: 'locked', description: 'AIの文章生成ルールを設定', hasAI: true },
     ]
   },
   {
