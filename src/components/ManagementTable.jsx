@@ -24,46 +24,12 @@ export default function ManagementTable(props) {
   const [copied, setCopied] = useState(null);
   const [isGenerating, setIsGenerating] = useState(false);
 
-  // 検索関連のState
-  const [searchKeyword, setSearchKeyword] = useState('');
-  const [isSearching, setIsSearching] = useState(false);
+  // 検索関連のState (廃止)
+  // const [searchKeyword, setSearchKeyword] = useState('');
+  // const [isSearching, setIsSearching] = useState(false);
 
-  // Threads検索して自動追加
-  const searchAndImport = async () => {
-    if (!searchKeyword) return;
-
-    setIsSearching(true);
-    try {
-      const response = await fetch(`/api/search-threads?q=${encodeURIComponent(searchKeyword)}&limit=10`);
-      const data = await response.json();
-
-      if (data.success && data.posts && data.posts.length > 0) {
-        const newItems = data.posts.map(post => ({
-          id: Date.now() + Math.random(), // ユニークID確保
-          buzzUrl: post.buzzUrl,
-          rakutenUrl: '', // 後で手動入力
-          postText: '', // 後で生成
-          scheduleTime: '',
-          status: 'draft',
-          type: 'product',
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          // メモとして元のテキストを保持してもいいが、今回はシンプルに
-        }));
-
-        setItems(prev => [...newItems, ...prev]);
-        alert(`${newItems.length}件の投稿を取り込みました！`);
-        setSearchKeyword('');
-      } else {
-        alert('投稿が見つかりませんでした。');
-      }
-    } catch (error) {
-      console.error('Search error:', error);
-      alert('検索中にエラーが発生しました。');
-    } finally {
-      setIsSearching(false);
-    }
-  };
+  // Threads検索して自動追加 (廃止)
+  // const searchAndImport = async () => { ... };
 
   // Gemini APIで投稿文を生成
   const generatePostText = async (item) => {
@@ -290,37 +256,15 @@ export default function ManagementTable(props) {
           <span className="text-sm text-gray-400">({items.length}件)</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="relative">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-            <input
-              type="text"
-              value={searchKeyword}
-              onChange={(e) => setSearchKeyword(e.target.value)}
-              placeholder="キーワードで自動取込..."
-              className="pl-9 pr-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-sm text-white focus:ring-2 focus:ring-blue-500 outline-none w-64 transition-all"
-              onKeyDown={(e) => e.key === 'Enter' && searchAndImport()}
-            />
-          </div>
+          {/* 検索機能は廃止されました */}
           <button
-            onClick={searchAndImport}
-            disabled={isSearching || !searchKeyword}
-            className={`px-4 py-2 rounded-lg text-white font-medium flex items-center gap-2 transition-all ${isSearching || !searchKeyword
-              ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
-              : 'bg-green-600 hover:bg-green-700'
-              }`}
+            onClick={addItem}
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white font-medium flex items-center gap-2 transition-all"
           >
-            {isSearching ? <span className="animate-spin">⌛</span> : <DownloadCloud className="w-4 h-4" />}
-            {isSearching ? '検索中...' : '自動取込'}
+            <Plus className="w-4 h-4" />
+            新規追加
           </button>
         </div>
-
-        <button
-          onClick={addItem}
-          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white font-medium flex items-center gap-2 transition-all"
-        >
-          <Plus className="w-4 h-4" />
-          新規追加
-        </button>
       </div>
 
       {/* テーブル */}
